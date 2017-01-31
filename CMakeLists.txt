@@ -71,13 +71,13 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in ${CMAKE_CURREN
 
 add_definitions(-DSCINTILLA_QT -DSCI_LEXER)
 
-option(WITH_QT4 "Build with qt4" ON)
+option(QT4_BUILD "Build with qt4" ON)
 
 include(FindAnyProject)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-if(WITH_QT4)
+if(QT4_BUILD)
     find_anyproject(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 else()
     find_anyproject(Qt5 REQUIRED COMPONENTS Qt5Widgets Qt5PrintSupport)
