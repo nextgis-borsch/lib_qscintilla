@@ -1,0 +1,10 @@
+,,,"LICENSE,NEWS,README"
+doc,doc,,README.doc
+include,include,,h
+include,doc,,txt
+lexers,lexers,,cpp
+lexlib,lexlib,,"cpp,h"
+Qt4Qt5,qt,,"cpp,h"
+Qt4Qt5/Qsci,qt/Qsci,,"cpp,h"
+Qt4Qt5,translate,,ts
+src,src,,"cpp,h"
