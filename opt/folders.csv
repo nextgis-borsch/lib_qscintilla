@@ -8,3 +8,5 @@ Qt4Qt5,qt,,"cpp,h"
 Qt4Qt5/Qsci,qt/Qsci,,"cpp,h"
 Qt4Qt5,translate,,ts
 src,src,,"cpp,h"
+Python,Python,,py
+Python/sip,Python/sip,,sip

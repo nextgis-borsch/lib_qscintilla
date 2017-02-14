@@ -29,9 +29,9 @@ qt4_add_translation(QM_FILES ${TS_FILES})
 
 if(OSX_FRAMEWORK)
     if(WITH_QT4)
-        set(INSTALL_QM_DIR "${INSTALL_QM_DIR}/4")
+        set(INSTALL_QM_DIR "${INSTALL_QM_DIR}/Qt4")
     else()
-        set(INSTALL_QM_DIR "${INSTALL_QM_DIR}/5")
+        set(INSTALL_QM_DIR "${INSTALL_QM_DIR}/Qt5")
     endif()
 endif()
 

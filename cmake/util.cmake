@@ -65,3 +65,23 @@ function(report_version name ver)
     message(STATUS "${BoldYellow}${name} version ${ver}${ColourReset}")
 
 endfunction()
+
+function(status_message text)
+
+    string(ASCII 27 Esc)
+    set(BoldGreen   "${Esc}[1;32m")
+    set(ColourReset "${Esc}[m")
+
+    message(STATUS "${BoldGreen}${text}${ColourReset}")
+
+endfunction()
+
+function(warning_message text)
+
+    string(ASCII 27 Esc)
+    set(BoldBlue   "${Esc}[1;34m")
+    set(ColourReset "${Esc}[m")
+
+    message(STATUS "${BoldGreen}${text}${ColourReset}")
+
+endfunction()

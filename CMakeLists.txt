@@ -90,6 +90,9 @@ set(LIB_NAME ${PROJECT_NAME})
 
 add_subdirectory(qt)
 add_subdirectory(translate)
+if(WITH_BINDINGS)
+    add_subdirectory(Python)
+endif()
 
 if(REGISTER_PACKAGE)
     export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
