@@ -25,16 +25,20 @@
 ################################################################################
 include(SIPMacros)
 find_anyproject(SIP REQUIRED)
+find_anyproject(PyQt4 REQUIRED)
 find_package(PythonInterp REQUIRED)
 find_package(PythonLibs REQUIRED)
 
 # setup SIP variables
 set(PYQT_SIP_FLAGS ${PYQT4_SIP_FLAGS})
 set(PYQT_SIP_DIR ${PYQT4_SIP_DIR})
-
 set(SIP_INCLUDES ${PYQT_SIP_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/qt)
 set(SIP_CONCAT_PARTS 4)
 separate_arguments(PYQT_SIP_FLAGS)
+
+if(WIN32)
+    set(SIP_TAGS WS_WIN Qt_4_8_7)
+endif(WIN32)
 
 if(OSX_FRAMEWORK)
     set(INSTALL_PYTHON_DIR "${CMAKE_INSTALL_PREFIX}/Library/Python/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
