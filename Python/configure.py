@@ -1,16 +1,16 @@
-# Copyright (c) 2016, Riverbank Computing Limited
+# Copyright (c) 2017, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#
+# 
 # 1. Redistributions of source code must retain the above copyright notice,
 #    this list of conditions and the following disclaimer.
-#
+# 
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#
+# 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -23,7 +23,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-# This is v2.0 of this boilerplate.
+# This is v2.3 of this boilerplate.
 
 
 from distutils import sysconfig
@@ -40,7 +40,7 @@ import sys
 
 # This must be kept in sync with Python/configure-old.py, qscintilla.pro,
 # example-Qt4Qt5/application.pro and designer-Qt4Qt5/designer.pro.
-QSCI_API_MAJOR = 12
+QSCI_API_MAJOR = 13
 
 
 class ModuleConfiguration(object):
@@ -60,7 +60,7 @@ class ModuleConfiguration(object):
 
     # The version of the module as a string.  Set it to None if you don't
     # provide version information.
-    version = '2.9.4'
+    version = '2.10.3'
 
     # Set if a configuration script is provided that handles versions of PyQt4
     # prior to v4.10 (i.e. versions where the pyqtconfig.py module is
@@ -222,7 +222,7 @@ class ModuleConfiguration(object):
         if lib_dir is None:
             lib_dir = target_configuration.qt_lib_dir
 
-        if not glob.glob(os.path.join(lib_dir, '*qscintilla*')):
+        if not glob.glob(os.path.join(lib_dir, '*qscintilla2_qt*')):
             error(
                     "The QScintilla library could not be found in %s. If "
                     "QScintilla is installed then use the --qsci-libdir "
@@ -329,8 +329,12 @@ class ModuleConfiguration(object):
         if lib_dir is None:
             lib_dir = target_configuration.qt_lib_dir
 
+        debug = '_debug' if target_configuration.debug else ''
+
         return os.path.join(lib_dir,
-                'libqscintilla2.%s.dylib' % QSCI_API_MAJOR)
+                'libqscintilla2_qt%s%s.%s.dylib' % (
+                        target_configuration.qt_version_str[0], debug,
+                        QSCI_API_MAJOR))
 
 
 ###############################################################################
@@ -639,10 +643,25 @@ class _HostPythonConfiguration:
         self.inc_dir = sysconfig.get_python_inc()
         self.venv_inc_dir = sysconfig.get_python_inc(prefix=sys.prefix)
         self.module_dir = sysconfig.get_python_lib(plat_specific=1)
+        self.debug = hasattr(sys, 'gettotalrefcount')
 
         if sys.platform == 'win32':
+            try:
+                # Python v3.3 and later.
+                base_prefix = sys.base_prefix
+
+            except AttributeError:
+                try:
+                    # virtualenv for Python v2.
+                    base_prefix = sys.real_prefix
+
+                except AttributeError:
+                    # We can't detect the base prefix in Python v3 prior to
+                    # v3.3.
+                    base_prefix = sys.prefix
+
             self.data_dir = sys.prefix
-            self.lib_dir = sys.prefix + '\\libs'
+            self.lib_dir = base_prefix + '\\libs'
         else:
             self.data_dir = sys.prefix + '/share'
             self.lib_dir = sys.prefix + '/lib'
@@ -688,6 +707,7 @@ class _TargetConfiguration:
 
         # Values based on the host Python configuration.
         py_config = _HostPythonConfiguration()
+        self.py_debug = py_config.debug
         self.py_platform = py_config.platform
         self.py_version = py_config.version
         self.py_module_dir = py_config.module_dir
@@ -697,29 +717,17 @@ class _TargetConfiguration:
         self.py_sip_dir = os.path.join(py_config.data_dir, 'sip')
         self.sip_inc_dir = py_config.venv_inc_dir
 
-        # The default qmake spec.
-        if self.py_platform == 'win32':
-            if self.py_version >= 0x030500:
-                self.qmake_spec = 'win32-msvc2015'
-            elif self.py_version >= 0x030300:
-                self.qmake_spec = 'win32-msvc2010'
-            elif self.py_version >= 0x020600:
-                self.qmake_spec = 'win32-msvc2008'
-            elif self.py_version >= 0x020400:
-                self.qmake_spec = 'win32-msvc.net'
-            else:
-                self.qmake_spec = 'win32-msvc'
-        else:
-            # Use the Qt default.  (We may update it for MacOS/X later.)
-            self.qmake_spec = ''
-
         # Remaining values.
+        self.debug = False
         self.pyqt_sip_flags = None
         self.pyqt_version_str = ''
         self.qmake = self._find_exe('qmake')
+        self.qmake_spec = ''
+        self.qt_version = 0
         self.qt_version_str = ''
         self.sip = self._find_exe('sip5', 'sip')
         self.sip_version = None
+        self.sip_version_str = None
         self.sysroot = ''
         self.stubs_dir = ''
 
@@ -818,23 +826,19 @@ class _TargetConfiguration:
             flags.append('-t')
             flags.append(self._get_platform_tag())
 
-            qt_version = version_from_string(self.qt_version_str)
-            if qt_version is None:
-                error("Unable to determine the version of Qt.")
-
             if self.pyqt_package == 'PyQt5':
-                if qt_version < 0x050000:
+                if self.qt_version < 0x050000:
                     error("PyQt5 requires Qt v5.0 or later.")
 
-                if qt_version > 0x060000:
-                    qt_version = 0x060000
+                if self.qt_version > 0x060000:
+                    self.qt_version = 0x060000
             else:
-                if qt_version > 0x050000:
-                    qt_version = 0x050000
+                if self.qt_version > 0x050000:
+                    self.qt_version = 0x050000
 
-            major = (qt_version >> 16) & 0xff
-            minor = (qt_version >> 8) & 0xff
-            patch = qt_version & 0xff
+            major = (self.qt_version >> 16) & 0xff
+            minor = (self.qt_version >> 8) & 0xff
+            patch = self.qt_version & 0xff
 
             flags.append('-t')
             flags.append('Qt_%d_%d_%d' % (major, minor, patch))
@@ -932,8 +936,30 @@ class _TargetConfiguration:
         # Query qmake.
         qt_config = _TargetQtConfiguration(self.qmake)
 
-        # The binary MacOS/X Qt installer defaults to XCode.  If this is what
-        # we might have then use macx-clang (Qt v5) or macx-g++ (Qt v4).
+        self.qt_version_str = getattr(qt_config, 'QT_VERSION', '')
+        self.qt_version = version_from_string(self.qt_version_str)
+        if self.qt_version is None:
+            error("Unable to determine the version of Qt.")
+
+        # On Windows for Qt versions prior to v5.9.0 we need to be explicit
+        # about the qmake spec.
+        if self.qt_version < 0x050900 and self.py_platform == 'win32':
+            if self.py_version >= 0x030500:
+                self.qmake_spec = 'win32-msvc2015'
+            elif self.py_version >= 0x030300:
+                self.qmake_spec = 'win32-msvc2010'
+            elif self.py_version >= 0x020600:
+                self.qmake_spec = 'win32-msvc2008'
+            elif self.py_version >= 0x020400:
+                self.qmake_spec = 'win32-msvc.net'
+            else:
+                self.qmake_spec = 'win32-msvc'
+        else:
+            # Otherwise use the default.
+            self.qmake_spec = ''
+
+        # The binary MacOS/X Qt installer used to default to XCode.  If so then
+        # use macx-clang (Qt v5) or macx-g++ (Qt v4).
         if sys.platform == 'darwin':
             try:
                 # Qt v5.
@@ -947,7 +973,6 @@ class _TargetConfiguration:
                 # Qt v4.
                 self.qmake_spec = 'macx-g++'
 
-        self.qt_version_str = getattr(qt_config, 'QT_VERSION', '')
         self.api_dir = os.path.join(qt_config.QT_INSTALL_DATA, 'qsci')
         self.qt_inc_dir = qt_config.QT_INSTALL_HEADERS
         self.qt_lib_dir = qt_config.QT_INSTALL_LIBS
@@ -959,6 +984,21 @@ class _TargetConfiguration:
         """ Apply options from the command line that influence subsequent
         configuration.  opts are the command line options.
         """
+
+        # On Windows the interpreter must be a debug build if a debug version
+        # is to be built and vice versa.
+        if sys.platform == 'win32':
+            if opts.debug:
+                if not self.py_debug:
+                    error(
+                            "A debug version of Python must be used when "
+                            "--debug is specified.")
+            elif self.py_debug:
+                error(
+                        "--debug must be specified when a debug version of "
+                        "Python is used.")
+
+        self.debug = opts.debug
 
         # Get the system root.
         if opts.sysroot is not None:
@@ -1079,12 +1119,12 @@ def _create_optparser(target_config, pkg_config):
 
     p.add_option('--spec', dest='qmakespec', default=None, action='store',
             metavar="SPEC",
-            help="pass -spec SPEC to qmake [default: %s]" % "don't pass -spec" if target_config.qmake_spec == '' else target_config.qmake_spec)
+            help="pass -spec SPEC to qmake")
 
     if _has_stubs(pkg_config):
         p.add_option('--stubsdir', dest='stubsdir', type='string',
                 default=None, action='callback',
-                callback=optparser_store_abspath, metavar="DIR",
+                callback=optparser_store_abspath, metavar="DIR", 
                 help="the PEP 484 stubs will be installed in DIR [default: "
                         "with the module]")
         p.add_option('--no-stubs', dest='no_stubs', default=False,
@@ -1095,7 +1135,7 @@ def _create_optparser(target_config, pkg_config):
     if pkg_config.qscintilla_api_file:
         p.add_option('--apidir', '-a', dest='apidir', type='string',
                 default=None, action='callback',
-                callback=optparser_store_abspath, metavar="DIR",
+                callback=optparser_store_abspath, metavar="DIR", 
                 help="the QScintilla API file will be installed in DIR "
                         "[default: QT_INSTALL_DATA/qsci]")
         p.add_option('--no-qsci-api', dest='no_qsci_api', default=False,
@@ -1163,7 +1203,7 @@ def _create_optparser(target_config, pkg_config):
                         "[default: %s]" % target_config.pyqt_sip_dir)
 
     p.add_option('--concatenate', '-c', dest='concat', default=False,
-            action='store_true',
+            action='store_true', 
             help="concatenate the C++ source files")
     p.add_option('--concatenate-split', '-j', dest='split', type='int',
             default=1, metavar="N",
@@ -1218,6 +1258,12 @@ def _inform_user(target_config, pkg_config):
     inform("%s will be installed in %s." %
             (pkg_name, target_config.module_dir))
 
+    if target_config.debug:
+        inform("A debug version of %s will be built." % pkg_name)
+
+    if target_config.py_debug:
+        inform("A debug build of Python is being used.")
+
     if target_config.pyqt_version_str != '':
         inform("PyQt %s is being used." % target_config.pyqt_version_str)
     else:
@@ -1229,7 +1275,7 @@ def _inform_user(target_config, pkg_config):
     if target_config.sysroot != '':
         inform("The system root directory is %s." % target_config.sysroot)
 
-    inform("sip %s is being used." % target_config.sip_version)
+    inform("sip %s is being used." % target_config.sip_version_str)
     inform("The sip executable is %s." % target_config.sip)
 
     if target_config.prot_is_public:
@@ -1263,6 +1309,10 @@ def _generate_code(target_config, opts, pkg_config, module_config):
 
     # Build the SIP command line.
     argv = [quote(target_config.sip)]
+
+    # Tell SIP if this is a debug build of Python (SIP v4.19.1 and later).
+    if target_config.sip_version >= 0x041301 and target_config.py_debug:
+        argv.append('-D')
 
     # Add the module-specific flags.
     argv.extend(pkg_config.get_sip_flags(target_config))
@@ -1378,8 +1428,8 @@ def _generate_pro(target_config, opts, module_config):
     if qt:
         pro.write('QT += %s\n' % qt)
 
-    pro.write('CONFIG += %s\n' % ('debug' if opts.debug else 'release'))
-    pro.write('CONFIG += %s\n' % ('staticlib' if opts.static else 'plugin'))
+    pro.write('CONFIG += %s\n' % ('debug' if target_config.debug else 'release'))
+    pro.write('CONFIG += %s\n' % ('staticlib' if opts.static else 'plugin plugin_bundle'))
 
     config = qmake_config.get('CONFIG')
     if config:
@@ -1407,19 +1457,38 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 
     mname = module_config.name
 
+    pro.write('TARGET = %s\n' % mname)
+
     if not opts.static:
         pro.write('''
 win32 {
     PY_MODULE = %s.pyd
-    target.files = %s.pyd
+    PY_MODULE_SRC = $(DESTDIR_TARGET)
+
     LIBS += -L%s
 } else {
     PY_MODULE = %s.so
-    target.files = %s.so
+
+    macx {
+        PY_MODULE_SRC = $(TARGET).plugin/Contents/MacOS/$(TARGET)
+
+        QMAKE_LFLAGS += "-undefined dynamic_lookup"
+
+        equals(QT_MAJOR_VERSION, 5) {
+            equals(QT_MINOR_VERSION, 5) {
+                QMAKE_RPATHDIR += $$[QT_INSTALL_LIBS]
+            }
+        }
+    } else {
+        PY_MODULE_SRC = $(TARGET)
+    }
 }
 
+QMAKE_POST_LINK = $(COPY_FILE) $$PY_MODULE_SRC $$PY_MODULE
+
 target.CONFIG = no_check_exist
-''' % (mname, mname, quote(target_config.py_pylib_dir), mname, mname))
+target.files = $$PY_MODULE
+''' % (mname, quote(target_config.py_pylib_dir), mname))
 
     pro.write('''
 target.path = %s
@@ -1482,34 +1551,16 @@ INSTALLS += sip
         pro.write('LIBS += %s\n' % libs)
 
     if not opts.static:
-        pro.write('''
-win32 {
-    QMAKE_POST_LINK = $(COPY_FILE) $(DESTDIR_TARGET) $$PY_MODULE
-} else {
-    QMAKE_POST_LINK = $(COPY_FILE) $(TARGET) $$PY_MODULE
-}
-
-macx {
-    QMAKE_LFLAGS += "-undefined dynamic_lookup"
-    greaterThan(QT_MAJOR_VERSION, 4) {
-        QMAKE_LFLAGS += "-install_name $$absolute_path($$PY_MODULE, $$target.path)"
-        greaterThan(QT_MINOR_VERSION, 4) {
-            QMAKE_RPATHDIR += $$[QT_INSTALL_LIBS]
-        }
-    }
-''')
-
         dylib = module_config.get_mac_wrapped_library_file(target_config)
 
         if dylib:
             pro.write('''
+macx {
     QMAKE_POST_LINK = $$QMAKE_POST_LINK$$escape_expand(\\\\n\\\\t)$$quote(install_name_tool -change %s %s $$PY_MODULE)
+}
 ''' % (os.path.basename(dylib), dylib))
 
-        pro.write('}\n')
-
     pro.write('\n')
-    pro.write('TARGET = %s\n' % mname)
     pro.write('HEADERS = sipAPI%s.h\n' % mname)
 
     pro.write('SOURCES =')
@@ -1644,7 +1695,9 @@ def _check_sip(target_config, pkg_config):
 
     pipe.close()
 
-    if '.dev' not in version_str and 'snapshot' not in version_str:
+    if '.dev' in version_str or 'snapshot' in version_str:
+        version = 0
+    else:
         version = version_from_string(version_str)
         if version is None:
             error(
@@ -1659,7 +1712,8 @@ def _check_sip(target_config, pkg_config):
                         "This version of %s requires sip %s or later." %
                                 (pkg_config.descriptive_name, min_sip_version))
 
-    target_config.sip_version = version_str
+    target_config.sip_version = version
+    target_config.sip_version_str = version_str
 
 
 def _main(argv, pkg_config):

@@ -37,12 +37,10 @@ set(SIP_CONCAT_PARTS 4)
 separate_arguments(PYQT_SIP_FLAGS)
 
 if(OSX_FRAMEWORK)
-    set(INSTALL_PYTHON_DIR "${CMAKE_INSTALL_PREFIX}/Library/Python/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
+    set(INSTALL_PYTHON_DIR "Library/Python/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
 else()
     set(INSTALL_PYTHON_DIR "${INSTALL_LIB_DIR}/Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/site-packages/")
 endif()
-
-set(QSCI_SIP_DIR ${CMAKE_INSTALL_PREFIX}/share/sip)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/qt
@@ -63,22 +61,20 @@ endif()
 
 install(FILES ${sip_files_qsci} DESTINATION ${QSCI_SIP_DIR}/Qsci)
 
-if (REGISTER_PACKAGE)
-    set(EXPORT_PACKAGE_NAME Qsci)
-    set(MOD_VERSION_STR "4.12")
+# Export package ===============================================================
+set(EXPORT_PACKAGE_NAME Qsci)
+string(TOUPPER ${EXPORT_PACKAGE_NAME} EXPORT_PACKAGE_NAME_UPPER)
 
-    string(TOUPPER ${EXPORT_PACKAGE_NAME} EXPORT_PACKAGE_NAME_UPPER)
-    set(EXPORT_PACKAGE_LIB_NAME qsci)
-
+if(REGISTER_PACKAGE)
+    # Export the package for use from the build-tree
+    # (this registers the build-tree with a global CMake-registry)
     export(PACKAGE ${EXPORT_PACKAGE_NAME})
-
-    include(CMakePackageConfigHelpers)
-    configure_package_config_file(
-        ${CMAKE_SOURCE_DIR}/cmake/QsciPackageConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}Config.cmake
-        INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
-    write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_PACKAGE_NAME}ConfigVersion.cmake
-        VERSION ${VERSION}
-        COMPATIBILITY AnyNewerVersion )
 endif()
+
+# Create the <Package>Config.cmake file
+configure_file(${PROJECT_SOURCE_DIR}/cmake/QsciPackageConfig.cmake.in
+    ${PROJECT_BINARY_DIR}/${EXPORT_PACKAGE_NAME_UPPER}Config.cmake @ONLY)
+
+install(FILES
+    ${PROJECT_BINARY_DIR}/${EXPORT_PACKAGE_NAME_UPPER}Config.cmake
+    DESTINATION ${INSTALL_CMAKECONF_DIR} COMPONENT dev)

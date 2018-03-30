@@ -1,4 +1,10 @@
+get_filename_component(_ROOT "${CMAKE_CURRENT_LIST_DIR}" PATH)
+get_filename_component(_ROOT "${_ROOT}" PATH)
+get_filename_component(_ROOT "${_ROOT}" PATH)
+get_filename_component(_ROOT "${_ROOT}" PATH)
+get_filename_component(_ROOT "${_ROOT}" PATH)
+
 set(@EXPORT_PACKAGE_NAME_UPPER@_VERSION @VERSION@)
 set(@EXPORT_PACKAGE_NAME_UPPER@_MOD_VERSION_STR @MOD_VERSION_STR@ CACHE INTERNAL "qsci mod version")
-set(@EXPORT_PACKAGE_NAME_UPPER@_SIP_DIR @QSCI_SIP_DIR@ CACHE INTERNAL "qsci sip directory")
+set(@EXPORT_PACKAGE_NAME_UPPER@_SIP_DIR ${_ROOT}/@QSCI_SIP_DIR@ CACHE INTERNAL "qsci sip directory")
 set(@EXPORT_PACKAGE_NAME_UPPER@_FOUND TRUE)
