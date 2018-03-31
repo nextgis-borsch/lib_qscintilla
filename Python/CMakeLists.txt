@@ -54,9 +54,9 @@ set(SIP_EXTRA_OPTIONS ${PYQT_SIP_FLAGS} -o -a ${CMAKE_CURRENT_BINARY_DIR}/QScint
 
 if(QT4_BUILD)
     set(SIP_DISABLE_FEATURES ${SIP_DISABLE_FEATURES} Qsci_Qt4)
-    ADD_SIP_PYTHON_MODULE(PyQt4.Qsci sip/qscimod4.sip ${LIB_NAME})
+    ADD_SIP_PYTHON_MODULE(PyQt4.Qsci sip/qscimod4.sip ${LIB_NAME} ${TARGET_LINK_LIB})
 else()
-    ADD_SIP_PYTHON_MODULE(PyQt5.Qsci sip/qscimod5.sip ${LIB_NAME})
+    ADD_SIP_PYTHON_MODULE(PyQt5.Qsci sip/qscimod5.sip ${LIB_NAME} ${TARGET_LINK_LIB})
 endif()
 
 install(FILES ${sip_files_qsci} DESTINATION ${QSCI_SIP_DIR}/Qsci)

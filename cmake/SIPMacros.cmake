@@ -91,7 +91,7 @@ MACRO(ADD_SIP_PYTHON_MODULE MODULE_NAME MODULE_SIP)
         # 4996 deprecation warnings (bindings re-export deprecated methods)
         # 4701 potentially uninitialized variable used (sip generated code)
         # 4702 unreachable code (sip generated code)
-        ADD_DEFINITIONS( /wd4996 /wd4701 /wd4702 )
+        ADD_DEFINITIONS( /wd4996 /wd4701 /wd4702 -DQSCINTILLA_DLL )
       ELSE(MSVC)
         # disable all warnings
         ADD_DEFINITIONS( -w -Wno-deprecated-declarations )

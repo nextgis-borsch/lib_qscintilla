@@ -54,8 +54,10 @@ set(QSCI_HHEADERS
 	Qsci/qscilexeridl.h
 	Qsci/qscilexerjava.h
 	Qsci/qscilexerjavascript.h
+	Qsci/qscilexerjson.h
 	Qsci/qscilexerlua.h
 	Qsci/qscilexermakefile.h
+	Qsci/qscilexermarkdown.h
 	Qsci/qscilexermatlab.h
 	Qsci/qscilexeroctave.h
 	Qsci/qscilexerpascal.h
@@ -164,6 +166,7 @@ set(CSOURCES
 	qscilexeridl.cpp
 	qscilexerjava.cpp
 	qscilexerjavascript.cpp
+    qscilexerjson.cpp
 	qscilexerlua.cpp
 	qscilexermakefile.cpp
 	qscilexermatlab.cpp
@@ -185,6 +188,7 @@ set(CSOURCES
 	qscilexerxml.cpp
 	qscilexeryaml.cpp
 	qscimacro.cpp
+    qscilexermarkdown.cpp
 	qsciprinter.cpp
 	qscistyle.cpp
 	qscistyledtext.cpp
