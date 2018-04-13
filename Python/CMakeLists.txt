@@ -23,11 +23,11 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
+find_package(PythonInterp REQUIRED)
+find_package(PythonLibs REQUIRED)
 include(SIPMacros)
 find_anyproject(SIP REQUIRED)
 find_anyproject(PyQt4 REQUIRED)
-find_package(PythonInterp REQUIRED)
-find_package(PythonLibs REQUIRED)
 
 # setup SIP variables
 set(PYQT_SIP_FLAGS ${PYQT4_SIP_FLAGS})
