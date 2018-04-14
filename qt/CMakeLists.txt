@@ -211,7 +211,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexBaan.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBash.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBasic.cpp
-	${CMAKE_SOURCE_DIR}/lexers/LexBibTex.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexBibTeX.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBullant.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexCaml.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexCLW.cpp
@@ -243,7 +243,7 @@ set(CSOURCES
     ${CMAKE_SOURCE_DIR}/lexers/LexJSON.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexKix.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexKVIrc.cpp
-	${CMAKE_SOURCE_DIR}/lexers/LexLaTex.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexLaTeX.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexLisp.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexLout.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexLua.cpp
