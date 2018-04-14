@@ -38,8 +38,10 @@ separate_arguments(PYQT_SIP_FLAGS)
 
 if(OSX_FRAMEWORK)
     set(INSTALL_PYTHON_DIR "Library/Python/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
-else()
+elseif(WIN32)
     set(INSTALL_PYTHON_DIR "${INSTALL_LIB_DIR}/Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/site-packages/")
+else()
+    set(INSTALL_PYTHON_DIR "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/dist-packages/")
 endif()
 
 include_directories(
