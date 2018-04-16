@@ -3,14 +3,14 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice,
 #    this list of conditions and the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -1124,7 +1124,7 @@ def _create_optparser(target_config, pkg_config):
     if _has_stubs(pkg_config):
         p.add_option('--stubsdir', dest='stubsdir', type='string',
                 default=None, action='callback',
-                callback=optparser_store_abspath, metavar="DIR", 
+                callback=optparser_store_abspath, metavar="DIR",
                 help="the PEP 484 stubs will be installed in DIR [default: "
                         "with the module]")
         p.add_option('--no-stubs', dest='no_stubs', default=False,
@@ -1135,7 +1135,7 @@ def _create_optparser(target_config, pkg_config):
     if pkg_config.qscintilla_api_file:
         p.add_option('--apidir', '-a', dest='apidir', type='string',
                 default=None, action='callback',
-                callback=optparser_store_abspath, metavar="DIR", 
+                callback=optparser_store_abspath, metavar="DIR",
                 help="the QScintilla API file will be installed in DIR "
                         "[default: QT_INSTALL_DATA/qsci]")
         p.add_option('--no-qsci-api', dest='no_qsci_api', default=False,
@@ -1203,7 +1203,7 @@ def _create_optparser(target_config, pkg_config):
                         "[default: %s]" % target_config.pyqt_sip_dir)
 
     p.add_option('--concatenate', '-c', dest='concat', default=False,
-            action='store_true', 
+            action='store_true',
             help="concatenate the C++ source files")
     p.add_option('--concatenate-split', '-j', dest='split', type='int',
             default=1, metavar="N",

@@ -36,6 +36,8 @@ set(SIP_INCLUDES ${PYQT_SIP_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}
 set(SIP_CONCAT_PARTS 4)
 separate_arguments(PYQT_SIP_FLAGS)
 
+configure_file(${PROJECT_SOURCE_DIR}/cmake/configure.py.in ${CMAKE_CURRENT_SOURCE_DIR}/configure.py COPYONLY)
+
 if(OSX_FRAMEWORK)
     set(INSTALL_PYTHON_DIR "Library/Python/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
 elseif(WIN32)
