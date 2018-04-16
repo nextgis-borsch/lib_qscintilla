@@ -371,6 +371,10 @@ else()
     add_library(${LIB_NAME} STATIC ${CSOURCES} ${QSCI_MOC_SOURCES} ${ALL_HHEADERS})
 endif()
 
+if(UNIX AND NOT OSX_FRAMEWORK)
+    set_target_properties(${LIB_NAME} PROPERTIES OUTPUT_NAME "${LIB_NAME}${QSCI_MAJOR_VERSION}")
+endif()
+
 target_link_extlibraries(${LIB_NAME})
 set(TARGET_LINK_LIB ${TARGET_LINK_LIB} ${LIB_NAME} PARENT_SCOPE)
 
