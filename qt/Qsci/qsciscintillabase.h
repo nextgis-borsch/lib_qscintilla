@@ -3404,8 +3404,6 @@ public:
     long SendScintilla(unsigned int msg, unsigned long wParam,
             void *lParam) const;
 
-    sptr_t SendScintilla(unsigned int msg, uptr_t wParam, sptr_t lParam) const;
-
     //! \overload
     long SendScintilla(unsigned int msg, unsigned long wParam,
             const char *lParam) const;

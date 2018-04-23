@@ -181,11 +181,6 @@ long QsciScintillaBase::SendScintilla(unsigned int msg, unsigned long wParam,
     return sci->WndProc(msg, wParam, reinterpret_cast<sptr_t>(lParam));
 }
 
-sptr_t QsciScintillaBase::SendScintilla(unsigned int msg, uptr_t wParam, sptr_t lParam) const
-{
-    return sci->WndProc(msg, wParam, lParam);
-}
-
 // Overloaded message send.
 long QsciScintillaBase::SendScintilla(unsigned int msg, unsigned long wParam,
         const char *lParam) const
