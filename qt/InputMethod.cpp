@@ -239,7 +239,7 @@ QVariant QsciScintillaBase::inputMethodQuery(Qt::InputMethodQuery query) const
         {
             char fontName[1024];
             int style = SendScintilla(SCI_GETSTYLEAT, pos);
-            int len = SendScintilla(SCI_STYLEGETFONT, style, reinterpret_cast<sptr_t>(fontName));
+            int len = SendScintilla(SCI_STYLEGETFONT, style, (void*)reinterpret_cast<sptr_t>(fontName));
             int size = SendScintilla(SCI_STYLEGETSIZE, style);
             bool italic = SendScintilla(SCI_STYLEGETITALIC, style);
             int weight = SendScintilla(SCI_STYLEGETBOLD, style) ? QFont::Bold : -1;
@@ -266,7 +266,7 @@ QVariant QsciScintillaBase::inputMethodQuery(Qt::InputMethodQuery query) const
             textRange.chrg = charRange;
             textRange.lpstrText = buffer.data();
 
-            SendScintilla(SCI_GETTEXTRANGE, 0, reinterpret_cast<sptr_t>(&textRange));
+            SendScintilla(SCI_GETTEXTRANGE, 0, (void*)reinterpret_cast<sptr_t>(&textRange));
 
             return bytesAsText(buffer.constData());
         }
@@ -274,7 +274,7 @@ QVariant QsciScintillaBase::inputMethodQuery(Qt::InputMethodQuery query) const
         case Qt::ImCurrentSelection:
         {
             QVarLengthArray<char,1024> buffer(SendScintilla(SCI_GETSELTEXT));
-            SendScintilla(SCI_GETSELTEXT, 0, reinterpret_cast<sptr_t>(buffer.data()));
+            SendScintilla(SCI_GETSELTEXT, 0, (void*)reinterpret_cast<sptr_t>(buffer.data()));
 
             return bytesAsText(buffer.constData());
         }
