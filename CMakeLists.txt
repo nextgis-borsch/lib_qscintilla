@@ -85,7 +85,7 @@ option(QT4_BUILD "Build with qt4" ON)
 
 include(FindAnyProject)
 
-set(CMAKE_AUTOMOC ON)
+# set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if(QT4_BUILD)
     find_anyproject(Qt4 REQUIRED COMPONENTS QtCore QtGui)
