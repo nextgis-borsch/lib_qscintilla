@@ -1,6 +1,6 @@
 // This module defines various things common to all of the Scintilla Qt port.
 //
-// Copyright (c) 2018 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -24,19 +24,15 @@
 #include <qglobal.h>
 
 
-#define QSCINTILLA_VERSION      0x020a04
-#define QSCINTILLA_VERSION_STR  "2.10.4"
+#define QSCINTILLA_VERSION      0x020b05
+#define QSCINTILLA_VERSION_STR  "2.11.5"
 
 
-// Define QSCINTILLA_MAKE_DLL to create a QScintilla shared library, or
-// define QSCINTILLA_DLL to link against a QScintilla shared library, or define
-// neither to either build or link against a static QScintilla library.
-#if defined(QSCINTILLA_DLL)
-#define QSCINTILLA_EXPORT       Q_DECL_IMPORT
-#elif defined(QSCINTILLA_MAKE_DLL)
-#define QSCINTILLA_EXPORT       Q_DECL_EXPORT
+// Define QSCINTILLA_MAKE_DLL to create a QScintilla shared library.
+#ifdef QSCINTILLA_MAKE_DLL
+    #define QSCINTILLA_EXPORT Q_DECL_EXPORT
 #else
-#define QSCINTILLA_EXPORT
+    #define QSCINTILLA_EXPORT Q_DECL_IMPORT
 #endif
 
 

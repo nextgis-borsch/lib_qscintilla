@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Riverbank Computing Limited
+# Copyright (c) 2020, Riverbank Computing Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,7 +23,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-# This is v2.3 of this boilerplate.
+# This is v2.16 of this boilerplate.
 
 
 from distutils import sysconfig
@@ -36,11 +36,6 @@ import sys
 ###############################################################################
 # You shouldn't need to modify anything above this line.
 ###############################################################################
-
-
-# This must be kept in sync with Python/configure-old.py, qscintilla.pro,
-# example-Qt4Qt5/application.pro and designer-Qt4Qt5/designer.pro.
-QSCI_API_MAJOR = 13
 
 
 class ModuleConfiguration(object):
@@ -60,7 +55,10 @@ class ModuleConfiguration(object):
 
     # The version of the module as a string.  Set it to None if you don't
     # provide version information.
-    version = '2.10.4'
+    version = '2.11.5'
+
+    # The name of the PEP 376 .dist-info directory to be created.
+    distinfo_name = 'QScintilla'
 
     # Set if a configuration script is provided that handles versions of PyQt4
     # prior to v4.10 (i.e. versions where the pyqtconfig.py module is
@@ -325,16 +323,7 @@ class ModuleConfiguration(object):
         target_configuration is the target configuration.
         """
 
-        lib_dir = target_configuration.qsci_lib_dir
-        if lib_dir is None:
-            lib_dir = target_configuration.qt_lib_dir
-
-        debug = '_debug' if target_configuration.debug else ''
-
-        return os.path.join(lib_dir,
-                'libqscintilla2_qt%s%s.%s.dylib' % (
-                        target_configuration.qt_version_str[0], debug,
-                        QSCI_API_MAJOR))
+        return None
 
 
 ###############################################################################
@@ -715,21 +704,24 @@ class _TargetConfiguration:
         self.py_venv_inc_dir = py_config.venv_inc_dir
         self.py_pylib_dir = py_config.lib_dir
         self.py_sip_dir = os.path.join(py_config.data_dir, 'sip')
-        self.sip_inc_dir = py_config.venv_inc_dir
 
         # Remaining values.
+        self.abi_version = None
         self.debug = False
         self.pyqt_sip_flags = None
         self.pyqt_version_str = ''
         self.qmake = self._find_exe('qmake')
         self.qmake_spec = ''
+        self.qmake_variables = []
         self.qt_version = 0
         self.qt_version_str = ''
         self.sip = self._find_exe('sip5', 'sip')
+        self.sip_inc_dir = None
         self.sip_version = None
         self.sip_version_str = None
         self.sysroot = ''
         self.stubs_dir = ''
+        self.distinfo = False
 
         self.prot_is_public = (self.py_platform.startswith('linux') or self.py_platform == 'darwin')
 
@@ -812,8 +804,6 @@ class _TargetConfiguration:
         self.py_pylib_dir = parser.get(section, 'py_pylib_dir',
                 self.py_pylib_dir)
 
-        self.sip_inc_dir = self.py_venv_inc_dir
-
         self.module_dir = parser.get(section, 'module_dir', self.module_dir)
 
         if self.pyqt_package is not None:
@@ -822,6 +812,11 @@ class _TargetConfiguration:
 
             # Construct the SIP flags.
             flags = []
+
+            sip_module = parser.get(section, 'sip_module')
+            if sip_module is not None:
+                flags.append('-n')
+                flags.append(sip_module)
 
             flags.append('-t')
             flags.append(self._get_platform_tag())
@@ -839,6 +834,14 @@ class _TargetConfiguration:
             major = (self.qt_version >> 16) & 0xff
             minor = (self.qt_version >> 8) & 0xff
             patch = self.qt_version & 0xff
+
+            # Qt v5.12.4 was the last release where we updated PyQt for a
+            # patch version.
+            if (major, minor) >= (5, 13):
+                patch = 0
+            elif (major, minor) == (5, 12):
+                if patch > 4:
+                    patch = 4
 
             flags.append('-t')
             flags.append('Qt_%d_%d_%d' % (major, minor, patch))
@@ -917,7 +920,6 @@ class _TargetConfiguration:
             self.py_pylib_dir = self._apply_sysroot(self.py_pylib_dir)
             self.py_sip_dir = self._apply_sysroot(self.py_sip_dir)
             self.module_dir = self._apply_sysroot(self.module_dir)
-            self.sip_inc_dir = self._apply_sysroot(self.sip_inc_dir)
 
     def _apply_sysroot(self, dir_name):
         """ Replace any leading sys.prefix of a directory name with sysroot.
@@ -1047,8 +1049,14 @@ class _TargetConfiguration:
             if opts.pyqt_sip_dir is not None:
                 self.pyqt_sip_dir = opts.pyqt_sip_dir
             else:
-                self.pyqt_sip_dir = os.path.join(self.py_sip_dir,
-                        self.pyqt_package)
+                # If sip v5 or later installed a bindings directory then assume
+                # the PyQt .sip files are there.
+                bindings_dir = os.path.join(self.module_dir, 'bindings')
+                if os.path.isdir(bindings_dir):
+                    self.pyqt_sip_dir = bindings_dir
+                else:
+                    self.pyqt_sip_dir = os.path.join(self.py_sip_dir,
+                            self.pyqt_package)
 
         if _has_stubs(pkg_config):
             if opts.stubsdir is not None:
@@ -1081,7 +1089,21 @@ class _TargetConfiguration:
         if opts.sip is not None:
             self.sip = opts.sip
 
+        if opts.abi_version is not None:
+            if not self.using_sip5():
+                error("The --abi-version argument can only be used with sip5.")
+
+            self.abi_version = opts.abi_version
+
+        if pkg_config.distinfo_name and opts.distinfo:
+            self.distinfo = True
+
         pkg_config.apply_options(self, opts)
+
+    def using_sip5(self):
+        """ Return True if sip5 is being used. """
+
+        return os.path.basename(self.sip).startswith('sip5')
 
     @staticmethod
     def _find_exe(*exes):
@@ -1120,6 +1142,11 @@ def _create_optparser(target_config, pkg_config):
     p.add_option('--spec', dest='qmakespec', default=None, action='store',
             metavar="SPEC",
             help="pass -spec SPEC to qmake")
+
+    if pkg_config.distinfo_name:
+        p.add_option("--no-dist-info", action="store_false", default=True,
+                dest="distinfo",
+                help="do not install the dist-info directory")
 
     if _has_stubs(pkg_config):
         p.add_option('--stubsdir', dest='stubsdir', type='string',
@@ -1194,6 +1221,9 @@ def _create_optparser(target_config, pkg_config):
             callback=optparser_store_abspath_dir, metavar="DIR",
             help="the directory containing the sip.h header file file is DIR "
                     "[default: %s]" % target_config.sip_inc_dir)
+    p.add_option("--abi-version", dest='abi_version', default=None,
+            metavar="VERSION",
+            help="the SIP ABI version to use (sip5 only)")
 
     if target_config.pyqt_package is not None:
         p.add_option('--pyqt-sipdir', dest='pyqt_sip_dir', type='string',
@@ -1291,10 +1321,12 @@ def _inform_user(target_config, pkg_config):
                 os.path.join(target_config.api_dir, 'api', 'python'))
 
 
-def _generate_code(target_config, opts, pkg_config, module_config):
+def _generate_code(target_config, opts, pkg_config, module_config, all_installs):
     """ Generate the code for the module.  target_config is the target
     configuration.  opts are the command line options.  pkg_config is the
     package configuration.  module_config is the module configuration.
+    all_installs is a list that is updated with the files installed for this
+    module.
     """
 
     inform(
@@ -1310,14 +1342,35 @@ def _generate_code(target_config, opts, pkg_config, module_config):
     # Build the SIP command line.
     argv = [quote(target_config.sip)]
 
+    if target_config.abi_version:
+        argv.append('--abi-version')
+        argv.append(target_config.abi_version)
+
     # Tell SIP if this is a debug build of Python (SIP v4.19.1 and later).
     if target_config.sip_version >= 0x041301 and target_config.py_debug:
         argv.append('-D')
 
-    # Add the module-specific flags.
-    argv.extend(pkg_config.get_sip_flags(target_config))
+    # This assumes that, for multi-module packages, each modules' .sip files
+    # will be rooted in a common root directory.  We must do this now so that
+    # any '-I' needed appears first.
+    pkg_root = os.path.dirname(os.path.abspath(__file__))
 
+    sip_file = module_config.get_sip_file(target_config)
+
+    head, tail = os.path.split(sip_file)
+    while head:
+        head, tail = os.path.split(head)
+
+    if tail != sip_file:
+        argv.append('-I')
+        argv.append(quote(os.path.join(pkg_root, tail)))
+
+    # Add the PyQt-specific flags.
     if target_config.pyqt_package is not None:
+        # Add PyQt's .sip files to the search path.
+        argv.append('-I')
+        argv.append(quote(target_config.pyqt_sip_dir))
+
         # Get the flags used for the main PyQt module.
         argv.extend(target_config.pyqt_sip_flags.split())
 
@@ -1326,9 +1379,8 @@ def _generate_code(target_config, opts, pkg_config, module_config):
         argv.append('Qt_6_0_0' if target_config.pyqt_package == 'PyQt5'
                 else 'Qt_5_0_0')
 
-        # Add PyQt's .sip files to the search path.
-        argv.append('-I')
-        argv.append(quote(target_config.pyqt_sip_dir))
+    # Add the module-specific flags.
+    argv.extend(pkg_config.get_sip_flags(target_config))
 
     if target_config.stubs_dir != '':
         # Generate the stub file.
@@ -1356,19 +1408,7 @@ def _generate_code(target_config, opts, pkg_config, module_config):
     argv.append('-c')
     argv.append(os.path.abspath(module_config.name))
 
-    # This assumes that, for multi-module packages, all modules's .sip files
-    # will be rooted in a common root directory.
-    sip_file = module_config.get_sip_file(target_config)
-
-    head, tail = os.path.split(sip_file)
-    while head:
-        head, tail = os.path.split(head)
-
-    if tail != sip_file:
-        argv.append('-I')
-        argv.append(quote(tail))
-
-    argv.append(sip_file)
+    argv.append(os.path.join(pkg_root, sip_file))
 
     check_file = os.path.join(module_config.name,
             'sipAPI%s.h' % module_config.name)
@@ -1380,7 +1420,7 @@ def _generate_code(target_config, opts, pkg_config, module_config):
         error("Unable to create the C++ code.")
 
     # Generate the .pro file.
-    _generate_pro(target_config, opts, module_config)
+    _generate_pro(target_config, opts, module_config, all_installs)
 
 
 def _get_qt_qmake_config(qmake_config, qt_version):
@@ -1406,10 +1446,11 @@ def _write_qt_qmake_config(qt_qmake_config, pro):
             pro.write('    %s += %s\n' % (name, value))
 
 
-def _generate_pro(target_config, opts, module_config):
+def _generate_pro(target_config, opts, module_config, all_installs):
     """ Generate the .pro file for the module.  target_config is the target
     configuration.  opts are the command line options.  module_config is the
-    module configuration.
+    module configuration.  all_installs is a list that is updated with the
+    files installed for this module.
     """
 
     inform("Generating the .pro file for the %s module..." % module_config.name)
@@ -1495,7 +1536,23 @@ target.path = %s
 INSTALLS += target
 ''' % quote(target_config.module_dir))
 
+    if sys.platform == 'win32':
+        fs = '{}.lib' if opts.static else '{}.pyd'
+    else:
+        fs = 'lib{}.a' if opts.static else '{}.so'
+
+    all_installs.append(target_config.module_dir + '/' + fs.format(mname))
+
+    # Change to the directory containing this script (in case of out-of-source
+    # builds).
+    pkg_root = os.path.dirname(os.path.abspath(__file__))
+    old_cwd = os.getcwd()
+    os.chdir(pkg_root)
+
     sip_installs = module_config.get_sip_installs(target_config)
+
+    os.chdir(old_cwd)
+
     if sip_installs is not None:
         path, files = sip_installs
 
@@ -1503,12 +1560,23 @@ INSTALLS += target
 sip.path = %s
 sip.files =''' % quote(path))
 
-        for f in files:
-            pro.write(' \\\n    ../%s' % f)
+        rel_pkg_root = os.path.relpath(pkg_root)
+
+        for fn in files:
+            # The filename should be relative to the current directory and use
+            # POSIX separators.
+            fn = fn.replace('/', os.sep)
+            fn = os.path.join(rel_pkg_root, fn)
+            fn = fn.replace(os.sep, '/')
+            fn = os.path.normpath(fn)
+
+            pro.write(' \\\n    ../%s' % fn)
 
         pro.write('''
 INSTALLS += sip
 ''')
+
+        all_installs.append(path)
 
     pro.write('\n')
 
@@ -1564,10 +1632,13 @@ macx {
     pro.write('HEADERS = sipAPI%s.h\n' % mname)
 
     pro.write('SOURCES =')
-    for s in os.listdir(module_config.name):
+    for s in sorted(os.listdir(module_config.name)):
         if s.endswith('.cpp'):
             pro.write(' \\\n    %s' % s)
     pro.write('\n')
+
+    if target_config.qmake_variables:
+        pro.write('\n'.join(target_config.qmake_variables) + '\n')
 
     pro.close()
 
@@ -1675,9 +1746,10 @@ def _remove_file(fname):
         pass
 
 
-def _check_sip(target_config, pkg_config):
+def _check_sip(target_config, pkg_config, verbose):
     """ Check that the version of sip is good enough.  target_config is the
-    target configuration.  pkg_config is the package configuration.
+    target configuration.  pkg_config is the package configuration.  verbose is
+    set if the output is to be displayed.
     """
 
     if target_config.sip is None:
@@ -1696,7 +1768,11 @@ def _check_sip(target_config, pkg_config):
     pipe.close()
 
     if '.dev' in version_str or 'snapshot' in version_str:
-        version = 0
+        # We only need to distinguish between sip v4 and sip v5.
+        if target_config.using_sip5():
+            version = 0x050000
+        else:
+            version = 0x040000
     else:
         version = version_from_string(version_str)
         if version is None:
@@ -1712,6 +1788,36 @@ def _check_sip(target_config, pkg_config):
                         "This version of %s requires sip %s or later." %
                                 (pkg_config.descriptive_name, min_sip_version))
 
+    if version >= 0x050000:
+        # Install the sip.h file for the private sip module.
+        if target_config.sip_inc_dir is None:
+            target_config.sip_inc_dir = os.path.join(
+                    os.path.abspath(os.getcwd()), 'include')
+
+            inform("Installing sip.h in %s..." % target_config.sip_inc_dir)
+
+            os.makedirs(target_config.sip_inc_dir, exist_ok=True)
+
+            argv = ['sip-module', '--sip-h']
+
+            if target_config.abi_version:
+                argv.append('--abi-version')
+                argv.append(target_config.abi_version)
+
+            argv.append('--target-dir')
+            argv.append(quote(target_config.sip_inc_dir)),
+            argv.append('PyQt5.sip')
+
+            _run_command(' '.join(argv), verbose)
+
+            if not os.access(os.path.join(target_config.sip_inc_dir, 'sip.h'), os.F_OK):
+                error(
+                        "sip-module failed to install sip.h in %s." %
+                                target_config.sip_inc_dir)
+    else:
+        if target_config.sip_inc_dir is None:
+            target_config.sip_inc_dir = target_config.py_venv_inc_dir
+
     target_config.sip_version = version
     target_config.sip_version_str = version_str
 
@@ -1726,11 +1832,7 @@ def _main(argv, pkg_config):
 
     # Parse the command line.
     p = _create_optparser(target_config, pkg_config)
-    opts, args = p.parse_args()
-
-    if args:
-        p.print_help()
-        sys.exit(2)
+    opts, target_config.qmake_variables = p.parse_args()
 
     target_config.apply_pre_options(opts)
 
@@ -1755,7 +1857,7 @@ def _main(argv, pkg_config):
             target_config.introspect_pyqt(pkg_config)
 
     # Check SIP is new enough.
-    _check_sip(target_config, pkg_config)
+    _check_sip(target_config, pkg_config, opts.verbose)
 
     # Perform any package specific checks now that all other information has
     # been captured.
@@ -1768,8 +1870,11 @@ def _main(argv, pkg_config):
     pkg_config.pre_code_generation(target_config)
 
     # Generate the code.
+    all_installs = []
+
     for module_config in pkg_config.modules:
-        _generate_code(target_config, opts, pkg_config, module_config)
+        _generate_code(target_config, opts, pkg_config, module_config,
+                all_installs)
 
     # Concatenate any .api files.
     if pkg_config.qscintilla_api_file and target_config.api_dir != '':
@@ -1811,12 +1916,44 @@ pep484_stubs.files = %s
 INSTALLS += pep484_stubs
 ''' % (target_config.stubs_dir, ' '.join(stubs)))
 
+            all_installs.extend(
+                    [target_config.stubs_dir + '/' + pyi for pyi in stubs])
+
     if pkg_config.qscintilla_api_file and target_config.api_dir != '':
+        api_dir = target_config.api_dir + '/api/python'
+        api_file = pkg_config.qscintilla_api_file + '.api'
+
         pro.write('''
-api.path = %s/api/python
-api.files = %s.api
+api.path = %s
+api.files = %s
 INSTALLS += api
-''' % (target_config.api_dir, pkg_config.qscintilla_api_file))
+''' % (api_dir, api_file))
+
+        all_installs.append(api_dir + '/' + api_file)
+
+    if target_config.distinfo:
+        # Allow for out-of-tree builds.
+        distinfo_dir = os.path.join(target_config.py_module_dir,
+            pkg_config.distinfo_name + '-' + pkg_config.version + '.dist-info')
+
+        mk_distinfo = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                'mk_distinfo.py')
+        run_mk_distinfo = '%s %s \\"$(INSTALL_ROOT)\\" %s installed.txt' % (
+                quote(sys.executable), quote(mk_distinfo), quote(distinfo_dir))
+
+        pro.write('''
+distinfo.extra = %s
+distinfo.path = %s
+INSTALLS += distinfo
+''' % (run_mk_distinfo, target_config.module_dir))
+
+        # Create the file containing the names of all installed files.
+        installed = open('installed.txt', 'w')
+
+        for install in all_installs:
+            installed.write(install + '\n')
+
+        installed.close()
 
     pro.close()
 
@@ -1836,11 +1973,17 @@ if __name__ == '__main__':
     except NameError:
         pkg_config_type = type('PackageConfiguration', (object, ), {})
 
-    if not hasattr(pkg_config_type, 'modules'):
+    if hasattr(pkg_config_type, 'modules'):
+        # Provide some default values.
+        pkg_config_type.distinfo_name = getattr(pkg_config_type,
+                'distinfo_name', '')
+    else:
         mod_config_type = ModuleConfiguration
 
         # Extract the package-specific attributes and methods.
         pkg_config_type.descriptive_name = mod_config_type.descriptive_name
+        pkg_config_type.distinfo_name = getattr(mod_config_type,
+                'distinfo_name', '')
         pkg_config_type.legacy_configuration_script = mod_config_type.legacy_configuration_script
         pkg_config_type.minimum_sip_version = mod_config_type.minimum_sip_version
         pkg_config_type.protected_is_public_is_supported = mod_config_type.protected_is_public_is_supported
