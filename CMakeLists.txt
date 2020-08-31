@@ -81,23 +81,14 @@ if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-option(QT4_BUILD "Build with qt4" ON)
-
 include(FindAnyProject)
 
-# set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-if(QT4_BUILD)
-    find_anyproject(Qt4 REQUIRED COMPONENTS QtCore QtGui)
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG>)
-    if(WIN32)
-        add_definitions(-DQT_DLL) # Only for shared libraries on win32
-    endif()
-else()
-    find_anyproject(Qt5 REQUIRED COMPONENTS Qt5Widgets Qt5PrintSupport)
-    if(APPLE)
-        find_anyproject(Qt5 REQUIRED COMPONENTS Qt5MacExtras)
-    endif()
+
+find_anyproject(Qt5 REQUIRED COMPONENTS Core Widgets PrintSupport LinguistTools)
+if(APPLE)
+    find_anyproject(Qt5 REQUIRED COMPONENTS Qt5MacExtras)
 endif()
 
 set(LIB_NAME ${PROJECT_NAME})

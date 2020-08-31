@@ -25,7 +25,7 @@
 ################################################################################
 file(GLOB TS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.ts")
 
-qt4_add_translation(QM_FILES ${TS_FILES})
+qt5_add_translation(QM_FILES ${TS_FILES})
 
 if(OSX_FRAMEWORK)
     if(QT4_BUILD)

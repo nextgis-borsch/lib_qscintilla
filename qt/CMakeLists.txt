@@ -23,9 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
-if(QT4_BUILD)
-    add_definitions(-DQT_NO_ACCESSIBILITY)
-endif()
 
 set(QSCI_HHEADERS
 	Qsci/qsciglobal.h
@@ -344,8 +341,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 set(ALL_HHEADERS ${QSCI_HHEADERS} ${HHEADERS})
-
-qt4_wrap_cpp(QSCI_MOC_SOURCES ${ALL_HHEADERS})
 
 if(BUILD_SHARED_LIBS)
     add_library(${LIB_NAME} SHARED ${CSOURCES} ${QSCI_MOC_SOURCES} ${ALL_HHEADERS})
