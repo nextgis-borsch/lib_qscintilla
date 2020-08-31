@@ -75,6 +75,10 @@ report_version(${PROJECT_NAME} ${VERSION})
 configure_file(${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 
 add_definitions(-DSCINTILLA_QT -DSCI_LEXER)
+if (BUILD_SHARED_LIBS)
+    add_definitions(-DQSCINTILLA_MAKE_DLL)
+endif()
+
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 if(COMPILER_SUPPORTS_CXX11)

@@ -27,11 +27,11 @@ find_package(PythonInterp REQUIRED)
 find_package(PythonLibs REQUIRED)
 include(SIPMacros)
 find_anyproject(SIP REQUIRED)
-find_anyproject(PyQt4 REQUIRED)
+find_anyproject(PyQt5 REQUIRED)
 
 # setup SIP variables
-set(PYQT_SIP_FLAGS ${PYQT4_SIP_FLAGS})
-set(PYQT_SIP_DIR ${PYQT4_SIP_DIR})
+set(PYQT_SIP_FLAGS ${PYQT5_SIP_FLAGS})
+set(PYQT_SIP_DIR ${PYQT5_SIP_DIR})
 set(SIP_INCLUDES ${PYQT_SIP_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/qt)
 set(SIP_CONCAT_PARTS 4)
 separate_arguments(PYQT_SIP_FLAGS)
@@ -56,12 +56,7 @@ file(GLOB_RECURSE sip_files_qsci sip/*.sip)
 set(SIP_EXTRA_FILES_DEPEND ${sip_files_qsci})
 set(SIP_EXTRA_OPTIONS ${PYQT_SIP_FLAGS} -o -a ${CMAKE_CURRENT_BINARY_DIR}/QScintilla2.api)
 
-if(QT4_BUILD)
-    set(SIP_DISABLE_FEATURES ${SIP_DISABLE_FEATURES} Qsci_Qt4)
-    ADD_SIP_PYTHON_MODULE(PyQt4.Qsci sip/qscimod4.sip ${LIB_NAME} ${TARGET_LINK_LIB})
-else()
-    ADD_SIP_PYTHON_MODULE(PyQt5.Qsci sip/qscimod5.sip ${LIB_NAME} ${TARGET_LINK_LIB})
-endif()
+ADD_SIP_PYTHON_MODULE(PyQt5.Qsci sip/qscimod5.sip ${LIB_NAME} ${TARGET_LINK_LIB})
 
 install(FILES ${sip_files_qsci} DESTINATION ${QSCI_SIP_DIR}/Qsci)
 

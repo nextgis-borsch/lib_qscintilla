@@ -45,6 +45,7 @@ set(QSCI_HHEADERS
 	Qsci/qscilexercustom.h
 	Qsci/qscilexerd.h
 	Qsci/qscilexerdiff.h
+	Qsci/qscilexeredifact.h
 	Qsci/qscilexerfortran.h
 	Qsci/qscilexerfortran77.h
 	Qsci/qscilexerhtml.h
@@ -82,7 +83,6 @@ set(QSCI_HHEADERS
 set(HHEADERS
 	ListBoxQt.h
 	SciClasses.h
-	SciNamespace.h
 	ScintillaQt.h
 	${CMAKE_SOURCE_DIR}/include/ILexer.h
 	${CMAKE_SOURCE_DIR}/include/Platform.h
@@ -92,6 +92,7 @@ set(HHEADERS
 	${CMAKE_SOURCE_DIR}/lexlib/Accessor.h
 	${CMAKE_SOURCE_DIR}/lexlib/CharacterCategory.h
 	${CMAKE_SOURCE_DIR}/lexlib/CharacterSet.h
+	${CMAKE_SOURCE_DIR}/lexlib/DefaultLexer.h
 	${CMAKE_SOURCE_DIR}/lexlib/LexAccessor.h
 	${CMAKE_SOURCE_DIR}/lexlib/LexerBase.h
 	${CMAKE_SOURCE_DIR}/lexlib/LexerModule.h
@@ -131,7 +132,6 @@ set(HHEADERS
 	${CMAKE_SOURCE_DIR}/src/Selection.h
 	${CMAKE_SOURCE_DIR}/src/SplitVector.h
 	${CMAKE_SOURCE_DIR}/src/Style.h
-	${CMAKE_SOURCE_DIR}/src/UnicodeFromUTF8.h
 	${CMAKE_SOURCE_DIR}/src/UniConversion.h
 	${CMAKE_SOURCE_DIR}/src/ViewStyle.h
 	${CMAKE_SOURCE_DIR}/src/XPM.h
@@ -157,6 +157,7 @@ set(CSOURCES
 	qscilexercustom.cpp
 	qscilexerd.cpp
 	qscilexerdiff.cpp
+	qscilexeredifact.cpp
 	qscilexerfortran.cpp
 	qscilexerfortran77.cpp
 	qscilexerhtml.cpp
@@ -195,6 +196,7 @@ set(CSOURCES
 	ListBoxQt.cpp
 	PlatQt.cpp
 	ScintillaQt.cpp
+	SciAccessibility.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexA68k.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexAbaqus.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexAda.cpp
@@ -208,6 +210,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexBaan.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBash.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBasic.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexBatch.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBibTeX.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexBullant.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexCaml.cpp
@@ -221,12 +224,14 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexCsound.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexCSS.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexD.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexDiff.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexDMAP.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexDMIS.cpp
     ${CMAKE_SOURCE_DIR}/lexers/LexEDIFACT.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexECL.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexEiffel.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexErlang.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexErrorList.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexEScript.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexFlagship.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexForth.cpp
@@ -236,6 +241,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexHaskell.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexHex.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexHTML.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexIndent.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexInno.cpp
     ${CMAKE_SOURCE_DIR}/lexers/LexJSON.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexKix.cpp
@@ -243,10 +249,13 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexLaTeX.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexLisp.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexLout.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexLPeg.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexLua.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexMagik.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexMake.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexMarkdown.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexMatlab.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexMaxima.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexMetapost.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexMMIXAL.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexModula.cpp
@@ -255,9 +264,9 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexMySQL.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexNimrod.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexNsis.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexNull.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexOpal.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexOScript.cpp
-	${CMAKE_SOURCE_DIR}/lexers/LexOthers.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexPascal.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexPB.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexPerl.cpp
@@ -267,6 +276,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexPowerPro.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexPowerShell.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexProgress.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexProps.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexPS.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexPython.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexR.cpp
@@ -274,6 +284,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexRegistry.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexRuby.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexRust.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexSAS.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexScriptol.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexSmalltalk.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexSML.cpp
@@ -281,6 +292,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexers/LexSpecman.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexSpice.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexSQL.cpp
+	${CMAKE_SOURCE_DIR}/lexers/LexStata.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexSTTXT.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexTACL.cpp
 	${CMAKE_SOURCE_DIR}/lexers/LexTADS3.cpp
@@ -297,6 +309,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/lexlib/Accessor.cpp
 	${CMAKE_SOURCE_DIR}/lexlib/CharacterCategory.cpp
 	${CMAKE_SOURCE_DIR}/lexlib/CharacterSet.cpp
+	${CMAKE_SOURCE_DIR}/lexlib/DefaultLexer.cpp
 	${CMAKE_SOURCE_DIR}/lexlib/LexerBase.cpp
 	${CMAKE_SOURCE_DIR}/lexlib/LexerModule.cpp
 	${CMAKE_SOURCE_DIR}/lexlib/LexerNoExceptions.cpp
@@ -312,6 +325,7 @@ set(CSOURCES
 	${CMAKE_SOURCE_DIR}/src/CellBuffer.cpp
 	${CMAKE_SOURCE_DIR}/src/CharClassify.cpp
 	${CMAKE_SOURCE_DIR}/src/ContractionState.cpp
+	${CMAKE_SOURCE_DIR}/src/DBCS.cpp
 	${CMAKE_SOURCE_DIR}/src/Decoration.cpp
 	${CMAKE_SOURCE_DIR}/src/Document.cpp
 	${CMAKE_SOURCE_DIR}/src/EditModel.cpp
