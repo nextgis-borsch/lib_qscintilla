@@ -1,6 +1,6 @@
-// This is the SIP interface definition for the Qsci module of PyQt4.
+// This is the SIP interface definition for the Qsci module of PyQt6.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -18,9 +18,6 @@
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 
-%Module(name=PyQt4.Qsci, keyword_arguments="Optional")
-
-%Import QtCore/QtCoremod.sip
-%Import QtGui/QtGuimod.sip
+%Module(name=PyQt6.Qsci, keyword_arguments="Optional", use_limited_api=True)
 
 %Include qscimodcommon.sip

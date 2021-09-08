@@ -1,7 +1,7 @@
 // The implementation of various Qt version independent classes used by the
 // rest of the port.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -129,11 +129,7 @@ QsciSciListBox::QsciSciListBox(QWidget *parent, QsciListBoxQt *lbx_)
     // to be that the following works.  However it might now work because of a
     // change in Qt so we only enable it for recent versions in order to
     // reduce the risk of breaking something that works with earlier versions.
-#if QT_VERSION >= 0x040500
     setWindowFlags(Qt::ToolTip|Qt::WindowStaysOnTopHint);
-#else
-    setWindowFlags(Qt::Tool|Qt::FramelessWindowHint);
-#endif
 
     // This may not be needed.
     setFocusProxy(parent);

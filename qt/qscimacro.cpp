@@ -1,6 +1,6 @@
 // This module implements the QsciMacro class.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -183,9 +183,8 @@ QString QsciMacro::save() const
             ms += ' ';
 
         unsigned len = (*it).text.size();
-        QString m;
 
-        ms += m.sprintf("%u %lu %u", (*it).msg, (*it).wParam, len);
+        ms += QString("%1 %2 %3").arg((*it).msg).arg((*it).wParam).arg(len);
 
         if (len)
         {
@@ -209,13 +208,10 @@ QString QsciMacro::save() const
                 unsigned char ch = *cp++;
 
                 if (ch == '\\' || ch == '"' || ch <= ' ' || ch >= 0x7f)
-                {
-                    QString buf;
-
-                    ms += buf.sprintf("\\%02x", ch);
-                }
+                    ms += QString("\\%1").arg(static_cast<uint>(ch), 2, 16,
+                            QLatin1Char('0'));
                 else
-                    ms += ch;
+                    ms += static_cast<char>(ch);
             }
         }
     }

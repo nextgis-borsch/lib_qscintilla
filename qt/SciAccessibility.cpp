@@ -1,6 +1,6 @@
 // The implementation of the class that implements accessibility support.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -528,7 +528,8 @@ QRect QsciAccessibleScintillaBase::characterRect(int offset) const
     int style = sb->SendScintilla(QsciScintillaBase::SCI_GETSTYLEAT, position);
     QFontMetrics metrics(fontForStyle(style));
 
-    QRect rect(x_vport, y_vport, metrics.width(ch), metrics.height());
+    QRect rect(x_vport, y_vport, metrics.horizontalAdvance(ch),
+            metrics.height());
     rect.moveTo(sb->viewport()->mapToGlobal(rect.topLeft()));
 
     return rect;

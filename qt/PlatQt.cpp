@@ -1,6 +1,6 @@
 // This module implements the portability layer for the Qt port of Scintilla.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -25,12 +25,12 @@
 #include <qapplication.h>
 #include <qcursor.h>
 #include <qdatetime.h>
-#include <qdesktopwidget.h>
 #include <qfont.h>
 #include <qimage.h>
 #include <qpainter.h>
 #include <qpixmap.h>
 #include <qpolygon.h>
+#include <qscreen.h>
 #include <qstring.h>
 #include <qtextlayout.h>
 #include <qwidget.h>
@@ -98,48 +98,34 @@ void Font::Create(const FontParameters &fp)
         strategy = QFont::PreferDefault;
     }
 
-#if defined(Q_OS_MAC) && QT_VERSION < 0x050000
-#if QT_VERSION >= 0x040700
-    strategy = static_cast<QFont::StyleStrategy>(strategy | QFont::ForceIntegerMetrics);
-#else
-#warning "Correct handling of QFont metrics requires Qt v4.7.0 or later"
-#endif
-#endif
-
     f->setStyleStrategy(strategy);
+    f->setFamily(fp.faceName);
+    f->setPointSizeF(fp.size);
+    f->setItalic(fp.italic);
 
-    // If name of the font begins with a '-', assume, that it is an XLFD.
-    if (fp.faceName[0] == '-')
-    {
-        f->setRawName(fp.faceName);
-    }
+    // Scintilla weights are between 1 and 100, Qt5 weights are between 0 and
+    // 99, and Qt6 weights match Scintilla.  A negative weight is interpreted
+    // as an explicit Qt weight (ie. the back door).
+#if QT_VERSION >= 0x060000
+    QFont::Weight qt_weight = static_cast<QFont::Weight>(abs(fp.weight));
+#else
+    int qt_weight;
+
+    if (fp.weight < 0)
+        qt_weight = -fp.weight;
+    else if (fp.weight <= 200)
+        qt_weight = QFont::Light;
+    else if (fp.weight <= QsciScintillaBase::SC_WEIGHT_NORMAL)
+        qt_weight = QFont::Normal;
+    else if (fp.weight <= 600)
+        qt_weight = QFont::DemiBold;
+    else if (fp.weight <= 850)
+        qt_weight = QFont::Bold;
     else
-    {
-        f->setFamily(fp.faceName);
-        f->setPointSizeF(fp.size);
+        qt_weight = QFont::Black;
+#endif
 
-        // See if the Qt weight has been passed via the back door.   Otherwise
-        // map Scintilla weights to Qt weights ensuring that the SC_WEIGHT_*
-        // values get mapped to the correct QFont::Weight values.
-        int qt_weight;
-
-        if (fp.weight < 0)
-            qt_weight = -fp.weight;
-        else if (fp.weight <= 200)
-            qt_weight = QFont::Light;
-        else if (fp.weight <= QsciScintillaBase::SC_WEIGHT_NORMAL)
-            qt_weight = QFont::Normal;
-        else if (fp.weight <= 600)
-            qt_weight = QFont::DemiBold;
-        else if (fp.weight <= 850)
-            qt_weight = QFont::Bold;
-        else
-            qt_weight = QFont::Black;
-
-        f->setWeight(qt_weight);
-
-        f->setItalic(fp.italic);
-    }
+    f->setWeight(qt_weight);
 
     fid = f;
 }
@@ -278,14 +264,9 @@ void SurfaceImpl::InitPixMap(int width, int height, Surface *sid, WindowID wid)
 {
     Release();
 
-#if QT_VERSION >= 0x050100
     int dpr = PWindow(wid)->devicePixelRatio();
     QPixmap *pixmap = new QPixmap(width * dpr, height * dpr);
     pixmap->setDevicePixelRatio(dpr);
-#else
-    QPixmap *pixmap = new QPixmap(width, height);
-    Q_UNUSED(wid);
-#endif
 
     pd = pixmap;
 
@@ -399,8 +380,9 @@ void SurfaceImpl::RoundedRectangle(PRectangle rc, ColourDesired fore,
 
     painter->setPen(convertQColor(fore));
     painter->setBrush(convertQColor(back));
-    painter->drawRoundRect(
-            QRectF(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top));
+    painter->drawRoundedRect(
+            QRectF(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top),
+            25, 25, Qt::RelativeSize);
 }
 
 void SurfaceImpl::AlphaRectangle(PRectangle rc, int cornerSize,
@@ -423,9 +405,9 @@ void SurfaceImpl::AlphaRectangle(PRectangle rc, int cornerSize,
 
     const int radius = (cornerSize ? 25 : 0);
 
-    painter->drawRoundRect(
+    painter->drawRoundedRect(
             QRectF(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top),
-            radius, radius);
+            radius, radius, Qt::RelativeSize);
 }
 
 void SurfaceImpl::GradientRectangle(PRectangle rc,
@@ -488,14 +470,12 @@ void SurfaceImpl::Copy(PRectangle rc, Point from, Surface &surfaceSource)
         qreal width = rc.right - rc.left;
         qreal height = rc.bottom - rc.top;
 
-#if QT_VERSION >= 0x050100
         qreal dpr = pm->devicePixelRatio();
 
         x *= dpr;
         y *= dpr;
         width *= dpr;
         height *= dpr;
-#endif
 
         painter->drawPixmap(QPointF(rc.left, rc.top), *pm,
                 QRectF(x, y, width, height));
@@ -633,7 +613,7 @@ void SurfaceImpl::MeasureWidths(Font &font_, const char *s, int len,
 
 XYPOSITION SurfaceImpl::WidthText(Font &font_, const char *s, int len)
 {
-    return metrics(font_).width(convertText(s, len));
+    return metrics(font_).horizontalAdvance(convertText(s, len));
 
 }
 
@@ -659,11 +639,7 @@ XYPOSITION SurfaceImpl::Height(Font &font_)
 
 XYPOSITION SurfaceImpl::AverageCharWidth(Font &font_)
 {
-#if QT_VERSION >= 0x040200
     return metrics(font_).averageCharWidth();
-#else
-    return metrics(font_).width('n');
-#endif
 }
 
 void SurfaceImpl::SetClip(PRectangle rc)
@@ -855,7 +831,7 @@ void Window::SetCursor(Cursor curs)
 PRectangle Window::GetMonitorRect(Point pt)
 {
     QPoint qpt = PWindow(wid)->mapToGlobal(QPoint(pt.x, pt.y));
-    QRect qr = QApplication::desktop()->availableGeometry(qpt);
+    QRect qr = QApplication::screenAt(qpt)->availableGeometry();
     qpt = PWindow(wid)->mapFromGlobal(qr.topLeft());
 
     return PRectangle(qpt.x(), qpt.y(), qpt.x() + qr.width(), qpt.y() + qr.height());

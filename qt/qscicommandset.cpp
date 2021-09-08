@@ -1,6 +1,6 @@
 // This module implements the QsciCommandSet class.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -885,14 +885,12 @@ QsciCommandSet::~QsciCommandSet()
 bool QsciCommandSet::readSettings(QSettings &qs, const char *prefix)
 {
     bool rc = true;
-    QString skey;
 
     for (int i = 0; i < cmds.count(); ++i)
     {
         QsciCommand *cmd = cmds.at(i);
 
-        skey.sprintf("%s/keymap/c%d/", prefix,
-                static_cast<int>(cmd->command()));
+        QString skey = QString("%1/keymap/c%2/").arg(prefix).arg(static_cast<int>(cmd->command()));
 
         int key;
         bool ok;
@@ -924,14 +922,12 @@ bool QsciCommandSet::readSettings(QSettings &qs, const char *prefix)
 bool QsciCommandSet::writeSettings(QSettings &qs, const char *prefix)
 {
     bool rc = true;
-    QString skey;
 
     for (int i = 0; i < cmds.count(); ++i)
     {
         QsciCommand *cmd = cmds.at(i);
 
-        skey.sprintf("%s/keymap/c%d/", prefix,
-                static_cast<int>(cmd->command()));
+        QString skey = QString("%1/keymap/c%2/").arg(prefix).arg(static_cast<int>(cmd->command()));
 
         // Write the key.
         qs.setValue(skey + "key", cmd->key());

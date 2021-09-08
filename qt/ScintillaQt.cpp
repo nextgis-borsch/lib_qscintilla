@@ -1,6 +1,6 @@
 // The implementation of the Qt specific subclass of ScintillaBase.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -162,11 +162,7 @@ void QsciScintillaQt::StartDrag()
     QDrag *qdrag = new QDrag(qsb);
     qdrag->setMimeData(mimeSelection(drag));
 
-#if QT_VERSION >= 0x040300
     Qt::DropAction action = qdrag->exec(Qt::MoveAction | Qt::CopyAction, Qt::MoveAction);
-#else
-    Qt::DropAction action = qdrag->start(Qt::MoveAction);
-#endif
 
     // Remove the dragged text if it was a move to another widget or
     // application.

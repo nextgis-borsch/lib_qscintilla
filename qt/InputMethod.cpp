@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Riverbank Computing Limited
+// Copyright (c) 2021 Riverbank Computing Limited
 // Copyright (c) 2011 Archaeopteryx Software, Inc.
 // Copyright (c) 1990-2011, Scientific Toolworks, Inc.
 //
@@ -205,7 +205,7 @@ void QsciScintillaBase::inputMethodEvent(QInputMethodEvent *event)
             sci->view.imeCaretBlockOverride = true;
         }
 
-        // Set candidate box position for Qt::ImMicroFocus.
+        // Set candidate box position for Qt::ImCursorRectangle.
         preeditPos = sci->CurrentPosition();
         sci->EnsureCaretVisible();
         updateMicroFocus();
@@ -219,12 +219,10 @@ QVariant QsciScintillaBase::inputMethodQuery(Qt::InputMethodQuery query) const
     int line = SendScintilla(SCI_LINEFROMPOSITION, pos);
 
     switch (query) {
-#if QT_VERSION >= 0x050000
         case Qt::ImHints:
             return QWidget::inputMethodQuery(query);
-#endif
 
-        case Qt::ImMicroFocus:
+        case Qt::ImCursorRectangle:
         {
             int startPos = (preeditPos >= 0) ? preeditPos : pos;
             Scintilla::Point pt = sci->LocationFromPosition(startPos);

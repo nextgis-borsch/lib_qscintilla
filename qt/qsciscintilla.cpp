@@ -2,7 +2,7 @@
 // Scintilla.  It is modelled on QTextEdit - a method of the same name should
 // behave in the same way.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -470,7 +470,10 @@ void QsciScintilla::handleCallTipClick(int dir)
     if (ct_cursor > 0)
         ct.prepend('\001');
 
-    SendScintilla(SCI_CALLTIPSHOW, adjustedCallTipPosition(shift), ct.toLatin1().data());
+    ScintillaBytes ct_bytes = textAsBytes(ct);
+    const char *cts = ScintillaBytesConstData(ct_bytes);
+
+    SendScintilla(SCI_CALLTIPSHOW, adjustedCallTipPosition(shift), cts);
 }
 
 
@@ -4377,7 +4380,10 @@ void QsciScintilla::wheelEvent(QWheelEvent *e)
 
    if ((e->modifiers() & zoom_modifier) != 0)
    {
-       if (e->delta() > 0)
+       QPoint ad = e->angleDelta();
+       int delta = (qAbs(ad.x()) > qAbs(ad.y())) ? ad.x() : ad.y();
+
+       if (delta > 0)
            zoomIn();
        else
            zoomOut();

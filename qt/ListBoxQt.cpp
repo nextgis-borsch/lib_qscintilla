@@ -1,7 +1,7 @@
 // This module implements the specialisation of QListBox that handles the
 // Scintilla double-click callback.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -22,6 +22,8 @@
 #include "ListBoxQt.h"
 
 #include <stdlib.h>
+
+#include <QApplication>
 
 #include "SciClasses.h"
 #include "Qsci/qsciscintilla.h"
@@ -79,10 +81,22 @@ Scintilla::PRectangle QsciListBoxQt::GetDesiredRect()
 
     if (slb)
     {
-        QSize sh = slb->sizeHint();
+        int rows = slb->count();
 
-        rc.right = sh.width();
-        rc.bottom = sh.height();
+        if (rows == 0 || rows > visible_rows)
+            rows = visible_rows;
+
+        int row_height = slb->sizeHintForRow(0);
+        int height = (rows * row_height) + (2 * slb->frameWidth());
+
+        int width = slb->sizeHintForColumn(0) + (2 * slb->frameWidth());
+
+        if (slb->count() > rows)
+            width += QApplication::style()->pixelMetric(
+                    QStyle::PM_ScrollBarExtent);
+
+        rc.right = width;
+        rc.bottom = height;
     }
 
     return rc;
@@ -243,11 +257,7 @@ void QsciListBoxQt::RegisterRGBAImage(int type, int, int,
 {
     QPixmap pm;
 
-#if QT_VERSION >= 0x040700
     pm.convertFromImage(*reinterpret_cast<const QImage *>(pixelsImage));
-#else
-    pm = QPixmap::fromImage(*reinterpret_cast<const QImage *>(pixelsImage));
-#endif
 
     xset.insert(type, pm);
 }

@@ -1,6 +1,6 @@
 // This module implements the "official" low-level API.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -36,7 +36,6 @@
 #include <QPaintEvent>
 #include <QScrollBar>
 #include <QStyle>
-#include <QTextCodec>
 
 #include "SciAccessibility.h"
 #include "ScintillaQt.h"
@@ -80,17 +79,15 @@ static const QLatin1String mimeTextPlain("text/plain");
 static const QLatin1String mimeRectangularWin("MSDEVColumnSelect");
 static const QLatin1String mimeRectangular("text/x-qscintilla-rectangular");
 
-#if (QT_VERSION >= 0x040200 && QT_VERSION < 0x050000 && defined(Q_OS_MAC)) || (QT_VERSION >= 0x050200 && defined(Q_OS_OSX))
+#if QT_VERSION < 0x060000 && defined(Q_OS_OSX)
 extern void initialiseRectangularPasteboardMime();
 #endif
 
 
 // The ctor.
 QsciScintillaBase::QsciScintillaBase(QWidget *parent)
-    : QAbstractScrollArea(parent), preeditPos(-1), preeditNrBytes(0)
-#if QT_VERSION >= 0x050000
-        , clickCausedFocus(false)
-#endif
+    : QAbstractScrollArea(parent), preeditPos(-1), preeditNrBytes(0),
+            clickCausedFocus(false)
 {
 #if !defined(QT_NO_ACCESSIBILITY)
     QsciAccessibleScintillaBase::initialise();
@@ -103,12 +100,8 @@ QsciScintillaBase::QsciScintillaBase(QWidget *parent)
     setFocusPolicy(Qt::WheelFocus);
     setAttribute(Qt::WA_KeyCompression);
     setAttribute(Qt::WA_InputMethodEnabled);
-#if QT_VERSION >= 0x050100
     setInputMethodHints(
             Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText|Qt::ImhMultiLine);
-#elif QT_VERSION >= 0x040600
-    setInputMethodHints(Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText);
-#endif
 
     viewport()->setBackgroundRole(QPalette::Base);
     viewport()->setMouseTracking(true);
@@ -116,7 +109,7 @@ QsciScintillaBase::QsciScintillaBase(QWidget *parent)
 
     triple_click.setSingleShot(true);
 
-#if (QT_VERSION >= 0x040200 && QT_VERSION < 0x050000 && defined(Q_OS_MAC)) || (QT_VERSION >= 0x050200 && defined(Q_OS_OSX))
+#if QT_VERSION < 0x060000 && defined(Q_OS_OSX)
     initialiseRectangularPasteboardMime();
 #endif
 
@@ -321,11 +314,7 @@ void QsciScintillaBase::contextMenuEvent(QContextMenuEvent *e)
 void QsciScintillaBase::focusInEvent(QFocusEvent *e)
 {
     sci->SetFocusState(true);
-
-#if QT_VERSION >= 0x050000
     clickCausedFocus = (e->reason() == Qt::MouseFocusReason);
-#endif
-
     QAbstractScrollArea::focusInEvent(e);
 }
 
@@ -595,7 +584,7 @@ void QsciScintillaBase::mousePressEvent(QMouseEvent *e)
             sci->RightButtonDownWithModifiers(pt, clickTime,
                     QsciScintillaQt::ModifierFlags(shift, ctrl, alt));
     }
-    else if (e->button() == Qt::MidButton)
+    else if (e->button() == Qt::MiddleButton)
     {
         QClipboard *cb = QApplication::clipboard();
 
@@ -628,7 +617,6 @@ void QsciScintillaBase::mouseReleaseEvent(QMouseEvent *e)
                 QsciScintillaQt::ModifierFlags(false, ctrl, false));
     }
 
-#if QT_VERSION >= 0x050000
     if (!sci->pdoc->IsReadOnly() && !sci->PointInSelMargin(pt) && qApp->autoSipEnabled())
     {
         QStyle::RequestSoftwareInputPanel rsip = QStyle::RequestSoftwareInputPanel(style()->styleHint(QStyle::SH_RequestSoftwareInputPanel));
@@ -638,7 +626,6 @@ void QsciScintillaBase::mouseReleaseEvent(QMouseEvent *e)
     }
 
     clickCausedFocus = false;
-#endif
 }
 
 

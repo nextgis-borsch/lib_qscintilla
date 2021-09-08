@@ -1,8 +1,8 @@
 // This module implements part of the support for rectangular selections on
-// OS/X.  It is a separate file to avoid clashes between OS/X and Scintilla
+// macOS.  It is a separate file to avoid clashes between macOS and Scintilla
 // data types.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -22,7 +22,7 @@
 
 #include <qglobal.h>
 
-#if (QT_VERSION >= 0x040200 && QT_VERSION < 0x050000 && defined(Q_OS_MAC)) || (QT_VERSION >= 0x050200 && defined(Q_OS_OSX))
+#if QT_VERSION < 0x060000 && defined(Q_OS_OSX)
 
 #include <QByteArray>
 #include <QLatin1String>

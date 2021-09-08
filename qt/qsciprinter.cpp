@@ -1,6 +1,6 @@
 // This module implements the QsciPrinter class.
 //
-// Copyright (c) 2020 Riverbank Computing Limited <info@riverbankcomputing.com>
+// Copyright (c) 2021 Riverbank Computing Limited <info@riverbankcomputing.com>
 // 
 // This file is part of QScintilla.
 // 
@@ -48,8 +48,9 @@ void QsciPrinter::formatPage(QPainter &, bool, QRect &, int)
 }
 
 
-// Print a range of lines to a printer.
-int QsciPrinter::printRange(QsciScintillaBase *qsb, int from, int to)
+// Print a range of lines to a printer using a supplied QPainter.
+int QsciPrinter::printRange(QsciScintillaBase *qsb, QPainter &painter,
+        int from, int to)
 {
     // Sanity check.
     if (!qsb)
@@ -87,14 +88,14 @@ int QsciPrinter::printRange(QsciScintillaBase *qsb, int from, int to)
     if (startPos >= endPos)
         return false;
 
-    QPainter painter(this);
     bool reverse = (pageOrder() == LastPageFirst);
     bool needNewPage = false;
+    int nr_copies = supportsMultipleCopies() ? 1 : copyCount();
 
     qsb -> SendScintilla(QsciScintillaBase::SCI_SETPRINTMAGNIFICATION,mag);
     qsb -> SendScintilla(QsciScintillaBase::SCI_SETPRINTWRAPMODE,wrap);
 
-    for (int i = 1; i <= numCopies(); ++i)
+    for (int i = 1; i <= nr_copies; ++i)
     {
         // If we are printing in reverse page order then remember the start
         // position of each page.
@@ -167,6 +168,15 @@ int QsciPrinter::printRange(QsciScintillaBase *qsb, int from, int to)
     }
 
     return true;
+}
+
+
+// Print a range of lines to a printer using a default QPainter.
+int QsciPrinter::printRange(QsciScintillaBase *qsb, int from, int to)
+{
+    QPainter painter(this);
+
+    return printRange(qsb, painter, from, to);
 }
 
 
