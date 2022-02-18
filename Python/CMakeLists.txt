@@ -23,8 +23,18 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
-find_package(PythonInterp REQUIRED)
-find_package(PythonLibs REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development)
+
+if(${Python3_FOUND})
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+    set(PYTHON_LIBRARY ${Python3_LIBRARIES})
+    set(PYTHON_VERSION_MAJOR ${Python3_VERSION_MAJOR})
+    set(PYTHON_VERSION_MINOR ${Python3_VERSION_MINOR})
+    set(PYTHON_INCLUDE_PATH ${Python3_INCLUDE_DIRS})
+
+    link_directories(${Python3_LIBRARY_DIRS})
+endif()
+
 include(SIPMacros)
 find_anyproject(SIP REQUIRED)
 find_anyproject(PyQt5 REQUIRED)
