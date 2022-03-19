@@ -165,6 +165,11 @@ function(find_anyproject name)
             set(Qt5Widgets_UIC_EXECUTABLE Qt5::uic PARENT_SCOPE)
             set(Qt5Core_RCC_EXECUTABLE Qt5::rcc PARENT_SCOPE)
 
+            # foreach(_component find_anyproject_COMPONENTS)
+            #     set(Qt5${_component}_INCLUDE_DIRS Qt5${_component}_INCLUDE_DIRS PARENT_SCOPE)
+            # endforeach()
+            
+
             # AUTOMOC enabled targets need to know the Qt major and minor version they’re working with.
             if (${name} STREQUAL "Qt5")
                 string(SUBSTRING ${QT5_VERSION} 0 1 Qt5Core_MAJOR)

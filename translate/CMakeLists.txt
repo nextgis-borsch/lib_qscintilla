@@ -23,32 +23,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
-file(GLOB TS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.ts")
+file(GLOB QM_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.qm")
+# file(GLOB TS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.ts")
 
-if(WIN32)
-    # Copy zlib1.dll to qt5 bin path
-    find_anyproject(ZLIB DEFAULT ON)
-
-    if(ZLIB_FOUND)
-        get_target_property(ZLIB_DLL ${ZLIB_LIBRARIES} IMPORTED_LOCATION_RELEASE)
-        get_target_property(QT5_BIN_PATH Qt5::Core IMPORTED_LOCATION_RELEASE)
-        get_filename_component(QT5_BIN_PATH ${QT5_BIN_PATH} DIRECTORY)
-
-        warning_message("Copy ${ZLIB_DLL} to ${QT5_BIN_PATH}")
-
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ZLIB_DLL} ${QT5_BIN_PATH}
-        )
-    endif()
-endif()
-
-qt5_add_translation(QM_FILES ${TS_FILES})
+# qt5_add_translation(QM_FILES ${TS_FILES})
 
 if(OSX_FRAMEWORK)
     set(INSTALL_QM_DIR "${INSTALL_QM_DIR}/Qt5")
 endif()
 
-add_custom_target (translations_target ALL DEPENDS ${QM_FILES})
+# add_custom_target (translations_target ALL DEPENDS ${QM_FILES})
 
 if(NOT SKIP_INSTALL_TRANSLATIONS AND NOT SKIP_INSTALL_ALL)
     install(FILES ${QM_FILES} DESTINATION ${INSTALL_QM_DIR})

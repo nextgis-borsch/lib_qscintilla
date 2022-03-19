@@ -24,6 +24,7 @@ qrc_*.cpp
 ui_*.h
 Makefile*
 *build-*
+__pycache__
 
 # QtCreator
 
@@ -39,3 +40,6 @@ CMakeLists.txt.user
 # Installer
 build/
 inst/
+
+# gen
+pyproject.toml

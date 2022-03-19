@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, dmitry.baryshnikov@nexgis.com
 ################################################################################
-# Copyright (C) 2017, NextGIS <info@nextgis.com>
+# Copyright (C) 2017-2022, NextGIS <info@nextgis.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -35,39 +35,125 @@ if(${Python3_FOUND})
     link_directories(${Python3_LIBRARY_DIRS})
 endif()
 
-include(SIPMacros)
-find_anyproject(SIP REQUIRED)
-find_anyproject(PyQt5 REQUIRED)
 
-# setup SIP variables
-set(PYQT_SIP_FLAGS ${PYQT5_SIP_FLAGS})
-set(PYQT_SIP_DIR ${PYQT5_SIP_DIR})
-set(SIP_INCLUDES ${PYQT_SIP_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/qt)
-set(SIP_CONCAT_PARTS 4)
-separate_arguments(PYQT_SIP_FLAGS)
+set(TMP_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/inst")
 
+set(CONFIGURE_ARGS --verbose --build-dir ${CMAKE_CURRENT_BINARY_DIR}/bld_tmp --target-dir ${TMP_INSTALL_PREFIX} --scripts-dir ${CMAKE_CURRENT_BINARY_DIR}/s_tmp --no-docstrings) # --confirm-license  --qt-shared
 
-if(OSX_FRAMEWORK)
-    set(INSTALL_PYTHON_DIR "Library/Python/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
-elseif(WIN32)
-    set(INSTALL_PYTHON_DIR "${INSTALL_LIB_DIR}/Python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/site-packages/")
-else()
-    set(INSTALL_PYTHON_DIR "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/dist-packages/")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --debug)
 endif()
 
-include_directories(
-    ${CMAKE_SOURCE_DIR}/qt
-    ${CMAKE_SOURCE_DIR}/include
-    ${PYTHON_INCLUDE_PATH}
+get_property(QT_QMAKE_EXECUTABLE TARGET Qt5::qmake PROPERTY IMPORTED_LOCATION)
+get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" PATH)
+get_filename_component(QT_ROOT_DIR "${QT_BIN_DIR}" PATH)
+set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake=${QT_QMAKE_EXECUTABLE})
+set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting "QMAKE_RPATHDIR+=${QT_ROOT_DIR}/lib")
+
+include(ProcessorCount)
+ProcessorCount(N)
+if(NOT N EQUAL 0)
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --jobs ${N})
+endif()
+
+# Find sip-install
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -m site --user-base
+    RESULT_VARIABLE _process_status
+    OUTPUT_VARIABLE _process_output
+    OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-file(GLOB_RECURSE sip_files_qsci sip/*.sip)
-set(SIP_EXTRA_FILES_DEPEND ${sip_files_qsci})
-set(SIP_EXTRA_OPTIONS ${PYQT_SIP_FLAGS} -o -a ${CMAKE_CURRENT_BINARY_DIR}/QScintilla2.api)
+if(${_process_status} EQUAL 0)
+    string(STRIP ${_process_output} BASE_PATH)
+endif()
 
-ADD_SIP_PYTHON_MODULE(PyQt5.Qsci sip/qscimod5.sip ${LIB_NAME} ${TARGET_LINK_LIB})
+find_program(SIP_INSTALL_EXECUTABLE sip-install PATHS ${BASE_PATH}/bin)
 
-install(FILES ${sip_files_qsci} DESTINATION ${QSCI_SIP_DIR}/Qsci)
+get_property(Qt5Core_INCLUDE_DIRS TARGET Qt5::Core PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+foreach(_INC_DIR ${Qt5Core_INCLUDE_DIRS})
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${_INC_DIR})
+endforeach()
+get_property(Qt5Widgets_INCLUDE_DIRS TARGET Qt5::Widgets PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+foreach(_INC_DIR ${Qt5Widgets_INCLUDE_DIRS})
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${_INC_DIR})
+endforeach()
+get_property(Qt5PrintSupport_INCLUDE_DIRS TARGET Qt5::PrintSupport PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+foreach(_INC_DIR ${Qt5PrintSupport_INCLUDE_DIRS})
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${_INC_DIR})
+endforeach()
+set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${PROJECT_SOURCE_DIR}/qt)
+set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${PROJECT_SOURCE_DIR}/src)
+
+find_anyproject(PyQt5 REQUIRED)
+
+set(SIP_DIR ${PYQT5_PYTHON_DIR}PyQt5/bindings)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyproject-qt5.toml.cmakein ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml @ONLY)
+
+message(STATUS "SIP: ${SIP_INSTALL_EXECUTABLE}\nConfigure args: ${CONFIGURE_ARGS}")
+
+# Copy dependencies to bin dir
+set(RUN_DEPENDENCIES
+    lib_png
+    lib_tiff
+    lib_jpeg
+    lib_jbig
+    lib_lzma
+    lib_webp
+    lib_openssl
+    lib_curl
+    lib_jsonc
+    lib_bzip2
+    lib_qhull
+    lib_proj
+    lib_pq
+    lib_oci
+    lib_geotiff
+    lib_gif
+    lib_hdf4
+    lib_openjpeg
+    lib_kml
+    lib_opencad
+    lib_xml2
+    lib_spatialite
+    lib_szip
+    lib_uriparser
+    lib_z
+)
+
+get_compiler_version(COMPILER)
+foreach(RUN_DEPENDENCY ${RUN_DEPENDENCIES})
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -DDST_PATH=${QT_ROOT_DIR}/lib -DSRC_PATH=${PROJECT_BINARY_DIR} -DREPKA_PACKAGE=${RUN_DEPENDENCY} -DCOMPILER=${COMPILER} -DOSX_FRAMEWORK=${OSX_FRAMEWORK} -P ${PROJECT_SOURCE_DIR}/cmake/get_dependency.cmake
+    )
+endforeach()
+
+if(OSX_FRAMEWORK)
+    set(INSTALL_PYTHON_DIR "Library/Python/${PYTHON_VERSION_MAJOR}/site-packages/")
+elseif(WIN32)
+    set(INSTALL_PYTHON_DIR "${INSTALL_LIB_DIR}/Python${PYTHON_VERSION_MAJOR}/site-packages/")
+else()
+    set(INSTALL_PYTHON_DIR "lib/python${PYTHON_VERSION_MAJOR}/dist-packages/")
+endif()
+
+add_custom_target(build_py${ver} ALL
+    COMMAND ${SIP_INSTALL_EXECUTABLE} ${CONFIGURE_ARGS}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    VERBATIM
+)
+
+if(OSX_FRAMEWORK)
+    add_custom_target(fix_py${ver} ALL
+        COMMAND ${CONFIGURE_CMD}
+        ${PYTHON${ver}_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/mac_rpath_fix.py ${QT_ROOT_DIR}/lib
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        DEPENDS build_py${ver}
+        VERBATIM
+    )
+endif()
+
+# install(FILES ${sip_files_qsci} DESTINATION ${QSCI_SIP_DIR}/Qsci)
 
 # Export package ===============================================================
 set(EXPORT_PACKAGE_NAME Qsci)
@@ -83,6 +169,13 @@ endif()
 configure_file(${PROJECT_SOURCE_DIR}/cmake/QsciPackageConfig.cmake.in
     ${PROJECT_BINARY_DIR}/${EXPORT_PACKAGE_NAME_UPPER}Config.cmake @ONLY)
 
-install(FILES
-    ${PROJECT_BINARY_DIR}/${EXPORT_PACKAGE_NAME_UPPER}Config.cmake
-    DESTINATION ${INSTALL_CMAKECONF_DIR} COMPONENT dev)
+
+
+if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+    install(DIRECTORY ${TMP_INSTALL_PREFIX}/ 
+        DESTINATION "${INSTALL_PYTHON_DIR}" USE_SOURCE_PERMISSIONS)
+    
+    install(FILES
+        ${PROJECT_BINARY_DIR}/${EXPORT_PACKAGE_NAME_UPPER}Config.cmake
+        DESTINATION ${INSTALL_CMAKECONF_DIR} COMPONENT dev)
+endif()

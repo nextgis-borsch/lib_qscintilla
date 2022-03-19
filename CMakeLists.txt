@@ -3,7 +3,7 @@
 # Purpose:  CMake build scripts
 # Author:   Dmitry Baryshnikov, dmitry.baryshnikov@nexgis.com
 ################################################################################
-# Copyright (C) 2017-2018, NextGIS <info@nextgis.com>
+# Copyright (C) 2017-2022, NextGIS <info@nextgis.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -95,10 +95,11 @@ endif()
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_anyproject(Qt5 REQUIRED COMPONENTS Core Widgets PrintSupport LinguistTools)
+set(QT_COMPONENTS Core Widgets PrintSupport)
 if(APPLE)
-    find_anyproject(Qt5 REQUIRED COMPONENTS Qt5MacExtras)
+    set(QT_COMPONENTS ${QT_COMPONENTS} MacExtras)
 endif()
+find_anyproject(Qt5 REQUIRED COMPONENTS ${QT_COMPONENTS})
 
 set(LIB_NAME ${PROJECT_NAME})
 set(PACKAGE_NAME ${PROJECT_NAME})
