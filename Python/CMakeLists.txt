@@ -85,6 +85,22 @@ endforeach()
 set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${PROJECT_SOURCE_DIR}/qt)
 set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting INCLUDEPATH+=${PROJECT_SOURCE_DIR}/src)
 
+if(WIN32)
+    if(BUILD_SHARED_LIBS)
+        set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting "DEFINES+=QSCINTILLA_DLL")
+    endif()
+
+    string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
+
+    get_target_property(QT_WIDGETS_LIB Qt5::Widgets IMPORTED_IMPLIB_${BUILD_TYPE})
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting "LIBS+=${QT_WIDGETS_LIB}")
+
+    get_target_property(QT_PRINTSUPPORT_LIB Qt5::PrintSupport IMPORTED_IMPLIB_${BUILD_TYPE})
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting "LIBS+=${QT_PRINTSUPPORT_LIB}")
+
+    set(CONFIGURE_ARGS ${CONFIGURE_ARGS} --qmake-setting "LIBS+=${CMAKE_BINARY_DIR}/qt/${CMAKE_BUILD_TYPE}/${LIB_NAME}.lib")
+endif()
+
 find_anyproject(PyQt5 REQUIRED)
 
 set(SIP_DIR ${PYQT5_PYTHON_DIR}PyQt5/bindings)
@@ -122,10 +138,16 @@ set(RUN_DEPENDENCIES
     lib_z
 )
 
+if(OSX_FRAMEWORK)
+    set(DST_PATH ${QT_ROOT_DIR}/lib)
+else()
+    set(DST_PATH ${QT_ROOT_DIR}/bin)
+endif()
+
 get_compiler_version(COMPILER)
 foreach(RUN_DEPENDENCY ${RUN_DEPENDENCIES})
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -DDST_PATH=${QT_ROOT_DIR}/lib -DSRC_PATH=${PROJECT_BINARY_DIR} -DREPKA_PACKAGE=${RUN_DEPENDENCY} -DCOMPILER=${COMPILER} -DOSX_FRAMEWORK=${OSX_FRAMEWORK} -P ${PROJECT_SOURCE_DIR}/cmake/get_dependency.cmake
+        COMMAND ${CMAKE_COMMAND} -DDST_PATH=${DST_PATH} -DSRC_PATH=${PROJECT_BINARY_DIR} -DREPKA_PACKAGE=${RUN_DEPENDENCY} -DCOMPILER=${COMPILER} -DOSX_FRAMEWORK=${OSX_FRAMEWORK} -P ${PROJECT_SOURCE_DIR}/cmake/get_dependency.cmake
     )
 endforeach()
 
@@ -140,6 +162,7 @@ endif()
 add_custom_target(build_py${ver} ALL
     COMMAND ${SIP_INSTALL_EXECUTABLE} ${CONFIGURE_ARGS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${LIB_NAME}
     VERBATIM
 )
 
