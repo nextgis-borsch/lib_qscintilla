@@ -159,6 +159,8 @@ else()
     set(INSTALL_PYTHON_DIR "lib/python${PYTHON_VERSION_MAJOR}/dist-packages/")
 endif()
 
+set(QSCI_SIP_DIR ${INSTALL_PYTHON_DIR})
+
 add_custom_target(build_py${ver} ALL
     COMMAND ${SIP_INSTALL_EXECUTABLE} ${CONFIGURE_ARGS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

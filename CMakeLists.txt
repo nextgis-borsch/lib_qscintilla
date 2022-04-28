@@ -60,7 +60,6 @@ else()
     set(INSTALL_CMAKECONF_DIR ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/CMake CACHE INTERNAL "Installation directory for cmake config files" FORCE)
 endif()
 
-set(QSCI_SIP_DIR share/sip)
 set(MOD_VERSION_STR "4.12") # TODO: What mean this variable?
 
 include(util)
