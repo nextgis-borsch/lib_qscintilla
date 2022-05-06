@@ -159,7 +159,8 @@ else()
     set(INSTALL_PYTHON_DIR "lib/python${PYTHON_VERSION_MAJOR}/dist-packages/")
 endif()
 
-set(QSCI_SIP_DIR ${INSTALL_PYTHON_DIR}/PyQt5/bindings PARENT_SCOPE)
+set(QSCI_SIP_DIR ${INSTALL_PYTHON_DIR}/PyQt5/bindings)
+set(QSCI_SIP_DIR ${QSCI_SIP_DIR} PARENT_SCOPE)
 
 add_custom_target(build_py${ver} ALL
     COMMAND ${SIP_INSTALL_EXECUTABLE} ${CONFIGURE_ARGS}
